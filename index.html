@@ -30,6 +30,7 @@ input[type=text],input[type=number],select,textarea,input[type=file]{width:100%;
 .asset-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-height:320px;overflow:auto}.asset{border:1px solid #d8e8e1;background:#fff;border-radius:10px;padding:5px;text-align:center;min-width:0}.asset:hover{border-color:#12ad6b}.asset.active{outline:2px solid #16b978}.asset img{width:100%;height:58px;object-fit:contain;display:block}.asset span{display:block;font-size:9px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.asset.bg img{object-fit:cover;height:52px}
 .tasks-list{display:grid;gap:8px}.task-item{border:1px solid var(--line);border-radius:10px;padding:9px}.task-item.active{outline:2px solid var(--green2);background:#f2fbf7}.task-item b{font-size:12px}.task-item .mini{font-size:10px;color:var(--muted)}
 footer{padding:10px 16px;text-align:center;color:#6c8178;font-size:11px}
+.resume-overlay{position:fixed;z-index:9999;inset:0;background:#05271ad9;display:none;align-items:center;justify-content:center;padding:20px}.resume-overlay.show{display:flex}.resume-box{width:min(480px,94vw);background:#fff;border-radius:20px;padding:22px;box-shadow:0 24px 70px #0006}.resume-box h2{margin:0 0 8px}.resume-box p{margin:0 0 16px;color:#60786e}.resume-actions{display:flex;gap:9px;flex-wrap:wrap}.resume-actions button{flex:1;min-width:180px;border:0;border-radius:11px;padding:11px 13px;font-weight:900}.resume-continue{background:#16b978;color:#fff}.resume-reset{background:#e8efeb;color:#244a3a}
 @media(max-width:920px){.app{grid-template-columns:1fr}aside{position:relative;top:auto;max-height:none}.preview-wrap{padding:10px}.game{border-radius:12px}}
 </style>
 </head>
@@ -96,6 +97,7 @@ footer{padding:10px 16px;text-align:center;color:#6c8178;font-size:11px}
  </div>
 </main>
 </div>
+<div class="resume-overlay" id="resumeOverlay"><div class="resume-box"><h2>Продолжить работу?</h2><p>Найден сохранённый проект.</p><div class="resume-actions"><button class="resume-continue" id="resumeContinue">Продолжить редактирование</button><button class="resume-reset" id="resumeReset">Начать заново</button></div></div></div>
 <footer>Все права защищены и принадлежат Гальмиз Марии Александровне</footer>
 <script>
 (function(){
@@ -137,6 +139,7 @@ function defaults(){return{
  ],
  design:{cardBg:'#ffffff',questionColor:'#17382c',answerColor:'#17382c',questionSize:22,answerSize:16,answerBg:'#f7fbf9',buttonBg:'#16b978'}
 }}
+var hadSavedProject=!!localStorage.getItem('dogoniProject');
 var project=loadLocal()||defaults(),selectedTask=0,notoIcons=[],notoReady=false,testMode=false,rt=null,raf=0,audioCtx=null;
 var keys={left:false,right:false,up:false,down:false};
 function mergeDefaults(){
@@ -337,7 +340,14 @@ $('#loadBtn').onclick=function(){$('#loadFile').click()};$('#loadFile').onchange
 function standalone(){
  var clone=document.documentElement.cloneNode(true);var aside=clone.querySelector('aside'),top=clone.querySelector('.top'),footer=clone.querySelector('footer'),head=clone.querySelector('.preview-head'),badge=clone.querySelector('.preview-badge'),ep=clone.querySelector('#editorCardPreview');if(aside)aside.remove();if(top)top.remove();if(footer)footer.remove();if(head)head.remove();if(badge)badge.remove();if(ep)ep.remove();
  var app=clone.querySelector('.app');app.style.display='block';var pw=clone.querySelector('.preview-wrap');pw.style.padding='0';var game=clone.querySelector('.game');game.style.width='100vw';game.style.height='100vh';game.style.aspectRatio='auto';
- var sc=clone.querySelector('script');sc.textContent=sc.textContent.replace("var project=loadLocal()||defaults()","var project="+JSON.stringify(project)).replace("bindModel();mountBuiltin();loadNoto();renderTasks();renderPreview();markAssets();","renderPreview();startTest();");
+ var sc=clone.querySelector('script');sc.textContent=sc.textContent.replace("var project=loadLocal()||defaults()","var project="+JSON.stringify(project)).replace("bindModel();mountBuiltin();loadNoto();renderTasks();renderPreview();markAssets();
+(function(){
+ var overlay=$('#resumeOverlay');if(!overlay)return;
+ if(sessionStorage.getItem('dogoniFreshStart')==='1'){sessionStorage.removeItem('dogoniFreshStart');return}
+ if(hadSavedProject)overlay.classList.add('show');
+ $('#resumeContinue').onclick=function(){overlay.classList.remove('show')};
+ $('#resumeReset').onclick=function(){sessionStorage.setItem('dogoniFreshStart','1');localStorage.removeItem('dogoniProject');location.reload()}
+})();","renderPreview();startTest();");
  return '<!doctype html>\n'+clone.outerHTML
 }
 $('#htmlBtn').onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([standalone()],{type:'text/html'}));a.download='dogoni-game.html';a.click();URL.revokeObjectURL(a.href)};
