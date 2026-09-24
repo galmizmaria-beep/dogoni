@@ -266,7 +266,7 @@ function move(dir){
 }
 function checkBonus(){
  var pb=playerBox(rt.x,rt.y);
- $('.bonus').forEach(function(el){
+ $$('.bonus').forEach(function(el){
   var i=Number(el.dataset.task);if(rt.collected[i])return;
   var bb={x:Number(el.dataset.x),y:105,w:54,h:54};
   var overlap=pb.x<bb.x+bb.w&&pb.x+pb.w>bb.x&&pb.y<bb.y+bb.h&&pb.y+pb.h>bb.y;
