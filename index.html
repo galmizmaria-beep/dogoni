@@ -259,7 +259,14 @@ function move(dir){
  rt.camera=Math.max(0,rt.x-260);checkBonus();positionAll()
 }
 function checkBonus(){
- $$('.bonus').forEach(function(el){var i=Number(el.dataset.task);if(rt.collected[i])return;var bx=Number(el.dataset.x);if(Math.abs((rt.x+project.heroSize*.35)-bx)<60&&rt.y<125){rt.collected[i]=true;el.style.display='none';beep('bonus');openTask(i)}})
+ var hero=playerBox(rt.x,rt.y);
+ $('.bonus').forEach(function(el){
+  var i=Number(el.dataset.task);if(rt.collected[i])return;
+  var bx=Number(el.dataset.x),bw=54,by=105,bh=54;
+  var overlapX=hero.x+hero.w>bx+6&&hero.x<bx+bw-6;
+  var overlapY=hero.y+hero.h>by+10&&hero.y<by+bh-10;
+  if(overlapX&&overlapY){rt.collected[i]=true;el.style.display='none';beep('bonus');openTask(i)}
+ })
 }
 function testLoop(now){
  if(!testMode||!rt||!rt.running)return;var dt=Math.min(.04,(now-rt.last)/1000);rt.last=now;
