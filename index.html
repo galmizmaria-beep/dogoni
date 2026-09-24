@@ -246,7 +246,7 @@ function positionAll(){
  if(!rt)return;var game=$('#game'),ground=Math.round(game.clientHeight*.18),cam=rt.camera;rt.ground=ground;
  var hero=$('#hero'),enemy=$('#enemy');if(hero){hero.style.left=(rt.x-cam)+'px';hero.style.bottom=(ground+rt.y)+'px'}if(enemy){enemy.style.left=(rt.enemyX-cam)+'px';enemy.style.bottom=ground+'px'}
  $$('.obstacle').forEach(function(el){el.style.left=(Number(el.dataset.x)-cam)+'px';el.style.bottom=ground+'px'});
- $$('.bonus').forEach(function(el){el.style.left=(Number(el.dataset.x)-cam)+'px';el.style.bottom=(ground+105)+'px';el.style.display=rt.collected&&rt.collected[Number(el.dataset.task)]?'none':'block'});
+ $$$('.bonus').forEach(function(el){el.style.left=(Number(el.dataset.x)-cam)+'px';el.style.bottom=(ground+105)+'px';el.style.display=rt.collected&&rt.collected[Number(el.dataset.task)]?'none':'block'});
  var p=((performance.now()/40)+cam)*project.parallaxSpeed;$('#far').style.backgroundPosition=(-p*.10)+'px center';$('#mid').style.backgroundPosition=(-p*.28)+'px center';$('#near').style.backgroundPosition=(-p*.58)+'px center'
 }
 function updateHud(){var lang=t();$('#hudLives').textContent='❤️ '+lang.lives+': '+(rt?rt.lives:project.lives);$('#hudTimer').textContent='⏱ '+lang.time+': '+Math.max(0,Math.ceil(rt?rt.time:project.timer));$('#hudBonus').textContent='⭐ '+lang.bonus+': '+(rt?Object.keys(rt.collected).length:0)+'/'+project.bonusCount}
@@ -303,7 +303,7 @@ document.addEventListener('keydown',function(e){
  if((e.key==='ArrowUp'||e.key===' ')&&!e.repeat){e.preventDefault();move('up')}
 });
 document.addEventListener('keyup',function(e){if(e.key==='ArrowLeft')held.left=false;if(e.key==='ArrowRight')held.right=false});
-$('.controls button').forEach(function(b){
+$$('.controls button').forEach(function(b){
  b.onpointerdown=function(e){e.preventDefault();var k=b.dataset.key;if(k==='up')move('up');else if(k==='left'||k==='right')held[k]=true};
  function release(){var k=b.dataset.key;if(k==='left'||k==='right')held[k]=false}
  b.onpointerup=release;b.onpointercancel=release;b.onpointerleave=release
