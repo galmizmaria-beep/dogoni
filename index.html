@@ -30,6 +30,8 @@ input[type=text],input[type=number],select,textarea,input[type=file]{width:100%;
 .asset-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-height:320px;overflow:auto}.asset{border:1px solid #d8e8e1;background:#fff;border-radius:10px;padding:5px;text-align:center;min-width:0}.asset:hover{border-color:#12ad6b}.asset.active{outline:2px solid #16b978}.asset img{width:100%;height:58px;object-fit:contain;display:block}.asset span{display:block;font-size:9px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.asset.bg img{object-fit:cover;height:52px}
 .tasks-list{display:grid;gap:8px}.task-item{border:1px solid var(--line);border-radius:10px;padding:9px}.task-item.active{outline:2px solid var(--green2);background:#f2fbf7}.task-item b{font-size:12px}.task-item .mini{font-size:10px;color:var(--muted)}
 footer{padding:10px 16px;text-align:center;color:#6c8178;font-size:11px}
+.resume-overlay{position:fixed;z-index:9999;inset:0;background:#05271ad9;display:none;align-items:center;justify-content:center;padding:20px}
+.resume-overlay.show{display:flex}.resume-box{width:min(480px,94vw);background:#fff;border-radius:20px;padding:22px;box-shadow:0 24px 70px #0006}.resume-box h2{margin:0 0 8px}.resume-box p{margin:0 0 16px;color:#60786e}.resume-actions{display:flex;gap:9px;flex-wrap:wrap}.resume-actions button{flex:1;min-width:180px;border:0;border-radius:11px;padding:11px 13px;font-weight:900}.resume-continue{background:#16b978;color:#fff}.resume-reset{background:#e8efeb;color:#244a3a}
 @media(max-width:920px){.app{grid-template-columns:1fr}aside{position:relative;top:auto;max-height:none}.preview-wrap{padding:10px}.game{border-radius:12px}}
 </style>
 </head>
@@ -63,7 +65,7 @@ footer{padding:10px 16px;text-align:center;color:#6c8178;font-size:11px}
   <div class="section"><h3>Препятствия</h3><div id="obstacleNoto" class="asset-lib"></div><button class="btn" id="addObstacle">+ Добавить препятствие</button></div>
  </div>
  <div class="pane" id="tasks">
-  <div class="section"><h3>Задания</h3><div class="small">Количество заданий всегда равно количеству бонусов.</div><div id="tasksList" class="tasks-list"></div></div>
+  <div class="section"><h3>Задания</h3><div class="small">Количество заданий всегда равно количеству бонусов.</div><div id="tasksList" class="tasks-list"></div><button class="btn green" id="addTask" style="margin-top:9px">+ Добавить новое задание</button></div>
   <div class="section"><h3>Редактирование задания</h3>
    <label>Тип</label><select id="taskType"><option value="single">Один ответ</option><option value="multiple">Несколько ответов</option><option value="text">Ввод ответа</option><option value="oral">Устный ответ</option><option value="order">Расставить по порядку</option></select>
    <label>Вопрос</label><textarea id="taskQuestion" rows="3"></textarea>
@@ -96,6 +98,7 @@ footer{padding:10px 16px;text-align:center;color:#6c8178;font-size:11px}
  </div>
 </main>
 </div>
+<div class="resume-overlay" id="resumeOverlay"><div class="resume-box"><h2>Продолжить работу?</h2><p>Найден сохранённый проект.</p><div class="resume-actions"><button class="resume-continue" id="resumeContinue">Продолжить редактирование</button><button class="resume-reset" id="resumeReset">Начать заново</button></div></div></div>
 <footer>Все права защищены и принадлежат Гальмиз Марии Александровне</footer>
 <script>
 (function(){
@@ -137,7 +140,9 @@ function defaults(){return{
  ],
  design:{cardBg:'#ffffff',questionColor:'#17382c',answerColor:'#17382c',questionSize:22,answerSize:16,answerBg:'#f7fbf9',buttonBg:'#16b978'}
 }}
+var hadSavedProject=!!localStorage.getItem('dogoniProject');
 var project=loadLocal()||defaults(),selectedTask=0,notoIcons=[],notoReady=false,testMode=false,rt=null,raf=0,audioCtx=null;
+var keys={left:false,right:false,up:false,down:false};
 function mergeDefaults(){
  var d=defaults();Object.keys(d).forEach(function(k){if(project[k]===undefined)project[k]=d[k]});
  project.assets=Object.assign({},d.assets,project.assets||{});project.design=Object.assign({},d.design,project.design||{});
@@ -244,25 +249,47 @@ function playerBox(x,y){
 }
 function collidesObstacle(nextX,nextY){
  var pb=playerBox(nextX,nextY);
- for(var i=0;i<project.obstacles.length;i++){var o=project.obstacles[i],ox=o.x,ow=o.w||78,oh=o.h||72;if(pb.x+pb.w>ox&&pb.x<ox+ow&&pb.y<oh-8)return true}return false
+ for(var i=0;i<project.obstacles.length;i++){
+  var o=project.obstacles[i],ox=o.x,ow=o.w||78,oh=o.h||72;
+  var horizontal=pb.x+pb.w>ox+7&&pb.x<ox+ow-7;
+  if(horizontal&&nextY<oh-10)return true;
+ }
+ return false
 }
 function beep(type){
  if(!project.sound||project.volume<=0)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();var o=audioCtx.createOscillator(),g=audioCtx.createGain(),m={jump:[460,.09],bonus:[780,.12],task:[540,.11],correct:[900,.16],wrong:[180,.22],hit:[120,.12],win:[1050,.34],lose:[100,.42]}[type]||[440,.1];o.connect(g);g.connect(audioCtx.destination);o.frequency.value=m[0];o.type=(type==='wrong'||type==='lose'||type==='hit')?'sawtooth':'sine';g.gain.value=.12*project.volume;o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+m[1]);o.stop(audioCtx.currentTime+m[1])}catch(e){}
 }
+function jump(){
+ if(!testMode||!rt||!rt.running||rt.y>1)return;
+ rt.vy=720;beep('jump')
+}
 function move(dir){
+ if(dir==='up'){jump();return}
  if(!testMode||!rt||!rt.running)return;
- if(dir==='up'&&rt.y<=1){rt.vy=650;beep('jump')}
- if(dir==='right'){var nx=rt.x+22;if(collidesObstacle(nx,rt.y)){beep('hit');return}else rt.x=nx}
- if(dir==='left'){var nx2=Math.max(0,rt.x-22);if(!collidesObstacle(nx2,rt.y))rt.x=nx2}
+ var step=14;
+ if(dir==='right'){var nx=rt.x+step;if(!collidesObstacle(nx,rt.y))rt.x=nx;else beep('hit')}
+ if(dir==='left'){var nx2=Math.max(0,rt.x-step);if(!collidesObstacle(nx2,rt.y))rt.x=nx2}
  rt.camera=Math.max(0,rt.x-260);checkBonus();positionAll()
 }
 function checkBonus(){
- $$('.bonus').forEach(function(el){var i=Number(el.dataset.task);if(rt.collected[i])return;var bx=Number(el.dataset.x);if(Math.abs((rt.x+project.heroSize*.35)-bx)<60&&rt.y<125){rt.collected[i]=true;el.style.display='none';beep('bonus');openTask(i)}})
+ var hero=playerBox(rt.x,rt.y);
+ $('.bonus').forEach(function(el){
+  var i=Number(el.dataset.task);if(rt.collected[i])return;
+  var bx=Number(el.dataset.x),bw=54,by=105,bh=54;
+  var overlapX=hero.x+hero.w>bx&&hero.x<bx+bw;
+  var overlapY=hero.y+hero.h>by+8&&hero.y<by+bh-8;
+  if(overlapX&&overlapY){rt.collected[i]=true;el.style.display='none';beep('bonus');openTask(i)}
+ })
 }
 function testLoop(now){
  if(!testMode||!rt||!rt.running)return;var dt=Math.min(.04,(now-rt.last)/1000);rt.last=now;
  rt.time-=dt;rt.enemyX+=project.enemySpeed*26*dt;
- if(rt.y>0||rt.vy>0){var oldY=rt.y;rt.vy-=1550*dt;var ny=rt.y+rt.vy*dt;if(ny<0){ny=0;rt.vy=0}rt.y=ny}
+ if(keys.up&&rt.y<=1){keys.up=false;jump()}
+ if(keys.right&&!keys.left){var nx=rt.x+260*dt;if(!collidesObstacle(nx,rt.y))rt.x=nx}
+ if(keys.left&&!keys.right){var nx2=Math.max(0,rt.x-260*dt);if(!collidesObstacle(nx2,rt.y))rt.x=nx2}
+ rt.camera=Math.max(0,rt.x-260);
+ if(rt.y>0||rt.vy>0){rt.vy-=1550*dt;var ny=rt.y+rt.vy*dt;if(ny<0){ny=0;rt.vy=0}rt.y=ny}
+ checkBonus();
  if(rt.enemyX+project.enemySize*.55>=rt.x){finish(false,'Противник догнал героя');return}
  if(rt.time<=0){finish(false,'Время закончилось');return}
  if(rt.lives<=0){finish(false,'Жизни закончились');return}
@@ -270,13 +297,23 @@ function testLoop(now){
  positionAll();updateHud();raf=requestAnimationFrame(testLoop)
 }
 function startTest(){
- cancelAnimationFrame(raf);testMode=true;$('#game').classList.add('testing');$('#editorCardPreview').classList.remove('show');$('#taskModal').classList.remove('show');$('#endModal').classList.remove('show');
+ cancelAnimationFrame(raf);keys={left:false,right:false,up:false,down:false};testMode=true;$('#game').classList.add('testing');$('#editorCardPreview').classList.remove('show');$('#taskModal').classList.remove('show');$('#endModal').classList.remove('show');
  resetRuntime();buildScene();rt.running=true;rt.last=performance.now();positionAll();updateHud();raf=requestAnimationFrame(testLoop)
 }
-function stopTest(){cancelAnimationFrame(raf);testMode=false;$('#game').classList.remove('testing');$('#taskModal').classList.remove('show');$('#endModal').classList.remove('show');renderPreview();var tab=$('.tabs button.active').dataset.tab;showEditorCardForTab(tab)}
+function stopTest(){cancelAnimationFrame(raf);keys={left:false,right:false,up:false,down:false};testMode=false;$('#game').classList.remove('testing');$('#taskModal').classList.remove('show');$('#endModal').classList.remove('show');renderPreview();var tab=$('.tabs button.active').dataset.tab;showEditorCardForTab(tab)}
 $('#testBtn').onclick=startTest;$('#stopBtn').onclick=stopTest;
-document.addEventListener('keydown',function(e){var m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',' ':'up'};if(m[e.key]&&testMode){e.preventDefault();move(m[e.key])}});
-$$('.controls button').forEach(function(b){b.onpointerdown=function(){move(b.dataset.key)}});
+document.addEventListener('keydown',function(e){
+ var m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',' ':'up'};var k=m[e.key];
+ if(k&&testMode){e.preventDefault();keys[k]=true;if(k==='up'&&!e.repeat)jump()}
+});
+document.addEventListener('keyup',function(e){
+ var m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',' ':'up'};var k=m[e.key];
+ if(k){e.preventDefault();keys[k]=false}
+});
+$('.controls button').forEach(function(b){
+ b.onpointerdown=function(e){e.preventDefault();var k=b.dataset.key;keys[k]=true;if(k==='up')jump()};
+ var release=function(){keys[b.dataset.key]=false};b.onpointerup=release;b.onpointercancel=release;b.onpointerleave=release
+});
 
 function taskHtml(t,interactive){
  var lang=t?window.__noop:null;var tr=I18N[project.language]||I18N.ru;var h='<h2 style="font-size:'+project.design.questionSize+'px;color:'+project.design.questionColor+'">'+tr.task+'</h2><p style="font-size:'+project.design.questionSize+'px;color:'+project.design.questionColor+'">'+escapeHtml(t.q)+'</p>';
@@ -306,9 +343,20 @@ function renderTasks(){
  var list=$('#tasksList');list.innerHTML='';project.tasks.forEach(function(task,i){var d=document.createElement('div');d.className='task-item'+(i===selectedTask?' active':'');d.innerHTML='<b>'+(i+1)+'. '+escapeHtml(task.q)+'</b><div class="mini">'+task.type+'</div>';d.onclick=function(){selectedTask=i;renderTasks();fillTask();renderEditorCard()};list.appendChild(d)});fillTask()
 }
 function fillTask(){var q=project.tasks[selectedTask];if(!q)return;$('#taskType').value=q.type;$('#taskQuestion').value=q.q;$('#taskOptions').value=(q.options||[]).join('\n');$('#taskCorrect').value=q.correct||'';$('#taskFeedback').value=q.feedback||''}
-function saveTaskFromForm(){var q=project.tasks[selectedTask];if(!q)return;q.type=$('#taskType').value;q.q=$('#taskQuestion').value;q.options=$('#taskOptions').value.split('\n').filter(Boolean);q.correct=$('#taskCorrect').value;q.feedback=$('#taskFeedback').value;saveLocal();renderTasks();renderEditorCard()}
-['taskType','taskQuestion','taskOptions','taskCorrect','taskFeedback'].forEach(function(id){$('#'+id).addEventListener('input',function(){saveTaskFromForm()})});
-$('#saveTask').onclick=saveTaskFromForm;
+function saveTaskFromForm(refreshList){
+ var q=project.tasks[selectedTask];if(!q)return;
+ q.type=$('#taskType').value;q.q=$('#taskQuestion').value;q.options=$('#taskOptions').value.split('\n').filter(Boolean);q.correct=$('#taskCorrect').value;q.feedback=$('#taskFeedback').value;
+ saveLocal();renderEditorCard();
+ if(refreshList)renderTasks()
+}
+['taskType','taskQuestion','taskOptions','taskCorrect','taskFeedback'].forEach(function(id){$('#'+id).addEventListener('input',function(){saveTaskFromForm(false)})});
+$('#saveTask').onclick=function(){saveTaskFromForm(true)};
+$('#addTask').onclick=function(){
+ if(project.tasks.length>=30)return;
+ project.tasks.push({type:'single',q:'Новое задание '+(project.tasks.length+1),options:['Вариант 1','Вариант 2'],correct:'1',feedback:''});
+ project.bonusCount=project.tasks.length;selectedTask=project.tasks.length-1;$('#bonusCount').value=project.bonusCount;
+ saveLocal();renderTasks();renderPreview();showEditorCardForTab('tasks')
+};
 $('#addObstacle').onclick=function(){project.obstacles.push({x:700+project.obstacles.length*320,w:78,h:72});saveLocal();renderPreview()};
 
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -317,7 +365,16 @@ $('#loadBtn').onclick=function(){$('#loadFile').click()};$('#loadFile').onchange
 function standalone(){
  var clone=document.documentElement.cloneNode(true);var aside=clone.querySelector('aside'),top=clone.querySelector('.top'),footer=clone.querySelector('footer'),head=clone.querySelector('.preview-head'),badge=clone.querySelector('.preview-badge'),ep=clone.querySelector('#editorCardPreview');if(aside)aside.remove();if(top)top.remove();if(footer)footer.remove();if(head)head.remove();if(badge)badge.remove();if(ep)ep.remove();
  var app=clone.querySelector('.app');app.style.display='block';var pw=clone.querySelector('.preview-wrap');pw.style.padding='0';var game=clone.querySelector('.game');game.style.width='100vw';game.style.height='100vh';game.style.aspectRatio='auto';
- var sc=clone.querySelector('script');sc.textContent=sc.textContent.replace("var project=loadLocal()||defaults()","var project="+JSON.stringify(project)).replace("bindModel();mountBuiltin();loadNoto();renderTasks();renderPreview();markAssets();","renderPreview();startTest();");
+ var sc=clone.querySelector('script');sc.textContent=sc.textContent.replace("var project=loadLocal()||defaults()","var project="+JSON.stringify(project)).replace("bindModel();mountBuiltin();loadNoto();renderTasks();renderPreview();markAssets();
+(function(){
+ var overlay=$('#resumeOverlay');
+ if(!overlay)return;
+ var skip=sessionStorage.getItem('dogoniSkipResume')==='1';
+ if(skip){sessionStorage.removeItem('dogoniSkipResume');return}
+ if(hadSavedProject)overlay.classList.add('show');
+ $('#resumeContinue').onclick=function(){overlay.classList.remove('show')};
+ $('#resumeReset').onclick=function(){sessionStorage.setItem('dogoniSkipResume','1');localStorage.removeItem('dogoniProject');location.reload()}
+})();","renderPreview();startTest();");
  return '<!doctype html>\n'+clone.outerHTML
 }
 $('#htmlBtn').onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([standalone()],{type:'text/html'}));a.download='dogoni-game.html';a.click();URL.revokeObjectURL(a.href)};
