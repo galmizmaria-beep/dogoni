@@ -58,12 +58,18 @@ footer{padding:10px 16px;text-align:center;color:#6c8178;font-size:11px}
   <div class="section"><h3>Противник</h3><label>Размер противника</label><input id="enemySize" type="range" min="50" max="180" step="2"><label>Загрузить PNG/GIF</label><input id="enemyFile" type="file" accept="image/*"><div id="enemyBuiltin" class="asset-lib"></div><div id="enemyNoto" class="asset-lib"></div></div>
  </div>
  <div class="pane" id="world">
-  <div class="section"><h3>Параллакс</h3><label>Скорость параллакса</label><input id="parallaxSpeed" type="range" min=".2" max="3" step=".1"><button class="btn green" id="applyBgSet">Применить готовые 3 слоя</button><div id="bgBuiltin" class="asset-lib"></div></div>
+  <div class="section"><h3>Параллакс</h3>
+<label>Скорость параллакса</label><input id="parallaxSpeed" type="range" min=".2" max="3" step=".1">
+<button class="btn green" id="applyBgSet">Применить готовые 3 слоя</button>
+<label>Загрузить дальний слой</label><input id="bgFarFile" type="file" accept="image/*">
+<label>Загрузить средний слой</label><input id="bgMidFile" type="file" accept="image/*">
+<label>Загрузить ближний слой</label><input id="bgNearFile" type="file" accept="image/*">
+<div id="bgBuiltin" class="asset-lib"></div></div>
   <div class="section"><h3>Бонусы</h3><label>Количество бонусов = количество заданий</label><input id="bonusCount" type="number" min="1" max="30"><div id="bonusNoto" class="asset-lib"></div></div>
   <div class="section"><h3>Препятствия</h3><div id="obstacleNoto" class="asset-lib"></div><button class="btn" id="addObstacle">+ Добавить препятствие</button></div>
  </div>
  <div class="pane" id="tasks">
-  <div class="section"><h3>Задания</h3><div class="small">Количество заданий всегда равно количеству бонусов.</div><div id="tasksList" class="tasks-list"></div></div>
+  <div class="section"><h3>Задания</h3><div class="small">Количество заданий всегда равно количеству бонусов.</div><div id="tasksList" class="tasks-list"></div><div class="row" style="margin-top:8px"><button class="btn green" id="addTask">+ Добавить задание</button><button class="btn red" id="deleteTask">Удалить выбранное</button></div></div>
   <div class="section"><h3>Редактирование задания</h3>
    <label>Тип</label><select id="taskType"><option value="single">Один ответ</option><option value="multiple">Несколько ответов</option><option value="text">Ввод ответа</option><option value="oral">Устный ответ</option><option value="order">Расставить по порядку</option></select>
    <label>Вопрос</label><textarea id="taskQuestion" rows="3"></textarea>
@@ -137,7 +143,10 @@ function defaults(){return{
  ],
  design:{cardBg:'#ffffff',questionColor:'#17382c',answerColor:'#17382c',questionSize:22,answerSize:16,answerBg:'#f7fbf9',buttonBg:'#16b978'}
 }}
-var project=loadLocal()||defaults(),selectedTask=0,notoIcons=[],notoReady=false,testMode=false,rt=null,raf=0,audioCtx=null;
+var PLAYMODE=new URLSearchParams(location.search).get('play')==='1';
+function projectFromHash(){try{if(!location.hash)return null;return JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(1)))))}catch(e){return null}}
+var project=(PLAYMODE?projectFromHash():loadLocal())||defaults(),selectedTask=0,notoIcons=[],notoReady=false,testMode=false,rt=null,raf=0,audioCtx=null;
+var keys={left:false,right:false,up:false,down:false};
 function mergeDefaults(){
  var d=defaults();Object.keys(d).forEach(function(k){if(project[k]===undefined)project[k]=d[k]});
  project.assets=Object.assign({},d.assets,project.assets||{});project.design=Object.assign({},d.design,project.design||{});
@@ -171,6 +180,7 @@ function bindModel(){
 function fileToData(file,cb){var r=new FileReader();r.onload=function(){cb(r.result)};r.readAsDataURL(file)}
 $('#heroFile').onchange=function(){if(this.files[0])fileToData(this.files[0],function(u){project.assets.hero=u;saveLocal();renderPreview();markAssets()})};
 $('#enemyFile').onchange=function(){if(this.files[0])fileToData(this.files[0],function(u){project.assets.enemy=u;saveLocal();renderPreview();markAssets()})};
+[['bgFarFile','bgFar'],['bgMidFile','bgMid'],['bgNearFile','bgNear']].forEach(function(p){var el=$('#'+p[0]);if(el)el.onchange=function(){if(this.files[0])fileToData(this.files[0],function(u){project.assets[p[1]]=u;saveLocal();renderPreview();markAssets()})}});
 
 function assetCard(label,url,role,cls){
  var b=document.createElement('button');b.type='button';b.className='asset '+(cls||'');b.dataset.role=role;b.dataset.url=url;b.innerHTML='<img loading="lazy" src="'+url+'"><span>'+escapeHtml(label)+'</span>';
@@ -244,16 +254,22 @@ function playerBox(x,y){
 }
 function collidesObstacle(nextX,nextY){
  var pb=playerBox(nextX,nextY);
- for(var i=0;i<project.obstacles.length;i++){var o=project.obstacles[i],ox=o.x,ow=o.w||78,oh=o.h||72;if(pb.x+pb.w>ox&&pb.x<ox+ow&&pb.y<oh-8)return true}return false
+ for(var i=0;i<project.obstacles.length;i++){
+   var o=project.obstacles[i],ox=o.x,ow=o.w||78,oh=o.h||72;
+   var horizontal=pb.x+pb.w>ox+6&&pb.x<ox+ow-6;
+   var feet=nextY;
+   if(horizontal&&feet<oh-10)return true;
+ }
+ return false
 }
 function beep(type){
  if(!project.sound||project.volume<=0)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();var o=audioCtx.createOscillator(),g=audioCtx.createGain(),m={jump:[460,.09],bonus:[780,.12],task:[540,.11],correct:[900,.16],wrong:[180,.22],hit:[120,.12],win:[1050,.34],lose:[100,.42]}[type]||[440,.1];o.connect(g);g.connect(audioCtx.destination);o.frequency.value=m[0];o.type=(type==='wrong'||type==='lose'||type==='hit')?'sawtooth':'sine';g.gain.value=.12*project.volume;o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+m[1]);o.stop(audioCtx.currentTime+m[1])}catch(e){}
 }
 function move(dir){
  if(!testMode||!rt||!rt.running)return;
- if(dir==='up'&&rt.y<=1){rt.vy=650;beep('jump')}
- if(dir==='right'){var nx=rt.x+22;if(collidesObstacle(nx,rt.y)){beep('hit');return}else rt.x=nx}
- if(dir==='left'){var nx2=Math.max(0,rt.x-22);if(!collidesObstacle(nx2,rt.y))rt.x=nx2}
+ if(dir==='up'&&rt.y<=1){rt.vy=720;beep('jump')}
+ if(dir==='right'){var nx=rt.x+12;if(!collidesObstacle(nx,rt.y))rt.x=nx}
+ if(dir==='left'){var nx2=Math.max(0,rt.x-12);if(!collidesObstacle(nx2,rt.y))rt.x=nx2}
  rt.camera=Math.max(0,rt.x-260);checkBonus();positionAll()
 }
 function checkBonus(){
@@ -262,7 +278,12 @@ function checkBonus(){
 function testLoop(now){
  if(!testMode||!rt||!rt.running)return;var dt=Math.min(.04,(now-rt.last)/1000);rt.last=now;
  rt.time-=dt;rt.enemyX+=project.enemySpeed*26*dt;
- if(rt.y>0||rt.vy>0){var oldY=rt.y;rt.vy-=1550*dt;var ny=rt.y+rt.vy*dt;if(ny<0){ny=0;rt.vy=0}rt.y=ny}
+ if(keys.up&&rt.y<=1){rt.vy=720;keys.up=false;beep('jump')}
+ if(keys.right){var nx=rt.x+250*dt;if(!collidesObstacle(nx,rt.y))rt.x=nx}
+ if(keys.left){var nx2=Math.max(0,rt.x-250*dt);if(!collidesObstacle(nx2,rt.y))rt.x=nx2}
+ rt.camera=Math.max(0,rt.x-260);
+ if(rt.y>0||rt.vy>0){rt.vy-=1550*dt;var ny=rt.y+rt.vy*dt;if(ny<0){ny=0;rt.vy=0}rt.y=ny}
+ checkBonus();
  if(rt.enemyX+project.enemySize*.55>=rt.x){finish(false,'Противник догнал героя');return}
  if(rt.time<=0){finish(false,'Время закончилось');return}
  if(rt.lives<=0){finish(false,'Жизни закончились');return}
@@ -275,8 +296,9 @@ function startTest(){
 }
 function stopTest(){cancelAnimationFrame(raf);testMode=false;$('#game').classList.remove('testing');$('#taskModal').classList.remove('show');$('#endModal').classList.remove('show');renderPreview();var tab=$('.tabs button.active').dataset.tab;showEditorCardForTab(tab)}
 $('#testBtn').onclick=startTest;$('#stopBtn').onclick=stopTest;
-document.addEventListener('keydown',function(e){var m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',' ':'up'};if(m[e.key]&&testMode){e.preventDefault();move(m[e.key])}});
-$$('.controls button').forEach(function(b){b.onpointerdown=function(){move(b.dataset.key)}});
+document.addEventListener('keydown',function(e){var m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',' ':'up'};if(m[e.key]&&testMode){e.preventDefault();keys[m[e.key]]=true;if(m[e.key]==='up'&&!e.repeat)move('up')}});
+document.addEventListener('keyup',function(e){var m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',' ':'up'};if(m[e.key]){e.preventDefault();keys[m[e.key]]=false}});
+$('.controls button').forEach(function(b){b.onpointerdown=function(e){e.preventDefault();keys[b.dataset.key]=true;if(b.dataset.key==='up')move('up')};b.onpointerup=b.onpointercancel=b.onpointerleave=function(){keys[b.dataset.key]=false}});
 
 function taskHtml(t,interactive){
  var lang=t?window.__noop:null;var tr=I18N[project.language]||I18N.ru;var h='<h2 style="font-size:'+project.design.questionSize+'px;color:'+project.design.questionColor+'">'+tr.task+'</h2><p style="font-size:'+project.design.questionSize+'px;color:'+project.design.questionColor+'">'+escapeHtml(t.q)+'</p>';
@@ -308,23 +330,32 @@ function renderTasks(){
 function fillTask(){var q=project.tasks[selectedTask];if(!q)return;$('#taskType').value=q.type;$('#taskQuestion').value=q.q;$('#taskOptions').value=(q.options||[]).join('\n');$('#taskCorrect').value=q.correct||'';$('#taskFeedback').value=q.feedback||''}
 function saveTaskFromForm(){var q=project.tasks[selectedTask];if(!q)return;q.type=$('#taskType').value;q.q=$('#taskQuestion').value;q.options=$('#taskOptions').value.split('\n').filter(Boolean);q.correct=$('#taskCorrect').value;q.feedback=$('#taskFeedback').value;saveLocal();renderTasks();renderEditorCard()}
 ['taskType','taskQuestion','taskOptions','taskCorrect','taskFeedback'].forEach(function(id){$('#'+id).addEventListener('input',function(){saveTaskFromForm()})});
-$('#saveTask').onclick=saveTaskFromForm;
+$('#saveTask').onclick=function(){saveTaskFromForm();renderTasks();renderEditorCard()};
+$('#addTask').onclick=function(){project.bonusCount=Math.min(30,(Number(project.bonusCount)||0)+1);syncTaskCount(false);selectedTask=project.tasks.length-1;$('#bonusCount').value=project.bonusCount;saveLocal();renderTasks();renderPreview();showEditorCardForTab('tasks')};
+$('#deleteTask').onclick=function(){if(project.tasks.length<=1)return;project.tasks.splice(selectedTask,1);project.bonusCount=project.tasks.length;selectedTask=Math.max(0,Math.min(selectedTask,project.tasks.length-1));$('#bonusCount').value=project.bonusCount;saveLocal();renderTasks();renderPreview()};
 $('#addObstacle').onclick=function(){project.obstacles.push({x:700+project.obstacles.length*320,w:78,h:72});saveLocal();renderPreview()};
 
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 $('#saveBtn').onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(project,null,2)],{type:'application/json'}));a.download='dogoni-project.json';a.click();URL.revokeObjectURL(a.href)};
 $('#loadBtn').onclick=function(){$('#loadFile').click()};$('#loadFile').onchange=function(){if(!this.files[0])return;var r=new FileReader();r.onload=function(){try{project=JSON.parse(r.result);mergeDefaults();saveLocal();location.reload()}catch(e){alert('Не удалось загрузить проект')}};r.readAsText(this.files[0])};
+function encodeProject(){return btoa(unescape(encodeURIComponent(JSON.stringify(project))))}
+function playUrl(){return 'https://galmizmaria-beep.github.io/dogoni/?play=1#'+encodeProject()}
 function standalone(){
- var clone=document.documentElement.cloneNode(true);var aside=clone.querySelector('aside'),top=clone.querySelector('.top'),footer=clone.querySelector('footer'),head=clone.querySelector('.preview-head'),badge=clone.querySelector('.preview-badge'),ep=clone.querySelector('#editorCardPreview');if(aside)aside.remove();if(top)top.remove();if(footer)footer.remove();if(head)head.remove();if(badge)badge.remove();if(ep)ep.remove();
- var app=clone.querySelector('.app');app.style.display='block';var pw=clone.querySelector('.preview-wrap');pw.style.padding='0';var game=clone.querySelector('.game');game.style.width='100vw';game.style.height='100vh';game.style.aspectRatio='auto';
- var sc=clone.querySelector('script');sc.textContent=sc.textContent.replace("var project=loadLocal()||defaults()","var project="+JSON.stringify(project)).replace("bindModel();mountBuiltin();loadNoto();renderTasks();renderPreview();markAssets();","renderPreview();startTest();");
- return '<!doctype html>\n'+clone.outerHTML
+ var u=playUrl();return '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden}iframe{width:100%;height:100%;border:0}</style><iframe allow="autoplay" src="'+u+'"></iframe>'
 }
 $('#htmlBtn').onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([standalone()],{type:'text/html'}));a.download='dogoni-game.html';a.click();URL.revokeObjectURL(a.href)};
-$('#miniBtn').onclick=function(){window.__mini=standalone().replace(/>\s+</g,'><').replace(/\s{2,}/g,' ');alert('Код облегчён и подготовлен.')};
-$('#copyBtn').onclick=function(){var code=window.__mini||standalone().replace(/>\s+</g,'><');var iframe='<iframe style="width:100%;height:100%;border:0" srcdoc="'+code.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"></iframe>';navigator.clipboard.writeText(iframe).then(function(){alert('Код для Genially скопирован')})};
+$('#miniBtn').onclick=function(){window.__mini='<iframe allow="autoplay" style="width:100%;height:100%;border:0" src="'+playUrl()+'"></iframe>';alert('Код для Genially подготовлен.')};
+$('#copyBtn').onclick=function(){var iframe=window.__mini||'<iframe allow="autoplay" style="width:100%;height:100%;border:0" src="'+playUrl()+'"></iframe>';navigator.clipboard.writeText(iframe).then(function(){alert('Код для Genially скопирован')})};
 
-bindModel();mountBuiltin();loadNoto();renderTasks();renderPreview();markAssets();
+if(PLAYMODE){
+  var topEl=document.querySelector('.top'),asideEl=document.querySelector('aside'),footEl=document.querySelector('footer'),headEl=document.querySelector('.preview-head'),badgeEl=document.querySelector('.preview-badge');
+  if(topEl)topEl.remove();if(asideEl)asideEl.remove();if(footEl)footEl.remove();if(headEl)headEl.remove();if(badgeEl)badgeEl.remove();
+  document.querySelector('.app').style.display='block';document.querySelector('.preview-wrap').style.padding='0';
+  var g=document.querySelector('#game');g.style.width='100vw';g.style.height='100vh';g.style.aspectRatio='auto';g.style.borderRadius='0';
+  renderPreview();startTest();
+}else{
+  bindModel();mountBuiltin();loadNoto();renderTasks();renderPreview();markAssets();
+}
 })();
 </script>
 </body>
