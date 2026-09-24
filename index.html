@@ -63,7 +63,7 @@ footer{padding:10px 16px;text-align:center;color:#6c8178;font-size:11px}
   <div class="section"><h3>Препятствия</h3><div id="obstacleNoto" class="asset-lib"></div><button class="btn" id="addObstacle">+ Добавить препятствие</button></div>
  </div>
  <div class="pane" id="tasks">
-  <div class="section"><h3>Задания</h3><div class="small">Количество заданий всегда равно количеству бонусов.</div><div id="tasksList" class="tasks-list"></div></div>
+  <div class="section"><h3>Задания</h3><div class="small">Количество заданий всегда равно количеству бонусов.</div><div id="tasksList" class="tasks-list"></div><button class="btn green" id="addTask" style="margin-top:9px">+ Добавить новое задание</button></div>
   <div class="section"><h3>Редактирование задания</h3>
    <label>Тип</label><select id="taskType"><option value="single">Один ответ</option><option value="multiple">Несколько ответов</option><option value="text">Ввод ответа</option><option value="oral">Устный ответ</option><option value="order">Расставить по порядку</option></select>
    <label>Вопрос</label><textarea id="taskQuestion" rows="3"></textarea>
@@ -306,9 +306,15 @@ function renderTasks(){
  var list=$('#tasksList');list.innerHTML='';project.tasks.forEach(function(task,i){var d=document.createElement('div');d.className='task-item'+(i===selectedTask?' active':'');d.innerHTML='<b>'+(i+1)+'. '+escapeHtml(task.q)+'</b><div class="mini">'+task.type+'</div>';d.onclick=function(){selectedTask=i;renderTasks();fillTask();renderEditorCard()};list.appendChild(d)});fillTask()
 }
 function fillTask(){var q=project.tasks[selectedTask];if(!q)return;$('#taskType').value=q.type;$('#taskQuestion').value=q.q;$('#taskOptions').value=(q.options||[]).join('\n');$('#taskCorrect').value=q.correct||'';$('#taskFeedback').value=q.feedback||''}
-function saveTaskFromForm(){var q=project.tasks[selectedTask];if(!q)return;q.type=$('#taskType').value;q.q=$('#taskQuestion').value;q.options=$('#taskOptions').value.split('\n').filter(Boolean);q.correct=$('#taskCorrect').value;q.feedback=$('#taskFeedback').value;saveLocal();renderTasks();renderEditorCard()}
-['taskType','taskQuestion','taskOptions','taskCorrect','taskFeedback'].forEach(function(id){$('#'+id).addEventListener('input',function(){saveTaskFromForm()})});
-$('#saveTask').onclick=saveTaskFromForm;
+function saveTaskFromForm(refreshList){var q=project.tasks[selectedTask];if(!q)return;q.type=$('#taskType').value;q.q=$('#taskQuestion').value;q.options=$('#taskOptions').value.split('\n').filter(Boolean);q.correct=$('#taskCorrect').value;q.feedback=$('#taskFeedback').value;saveLocal();renderEditorCard();if(refreshList)renderTasks()}
+['taskType','taskQuestion','taskOptions','taskCorrect','taskFeedback'].forEach(function(id){$('#'+id).addEventListener('input',function(){saveTaskFromForm(false)})});
+$('#saveTask').onclick=function(){saveTaskFromForm(true)};
+$('#addTask').onclick=function(){
+ if(project.tasks.length>=30)return;
+ project.tasks.push({type:'single',q:'Новое задание '+(project.tasks.length+1),options:['Вариант 1','Вариант 2'],correct:'1',feedback:''});
+ project.bonusCount=project.tasks.length;selectedTask=project.tasks.length-1;$('#bonusCount').value=project.bonusCount;
+ saveLocal();renderTasks();renderPreview();showEditorCardForTab('tasks')
+};
 $('#addObstacle').onclick=function(){project.obstacles.push({x:700+project.obstacles.length*320,w:78,h:72});saveLocal();renderPreview()};
 
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
