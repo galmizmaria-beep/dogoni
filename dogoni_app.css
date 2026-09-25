@@ -38,3 +38,8 @@ label{color:#566265;font-weight:600}input,select,textarea{border-color:#e0ded5;b
 @media(min-width:1450px){.preview{padding:26px}.game{max-height:480px}}
 @media(max-width:1150px){.top{padding:13px 18px}.brand{width:100%}.app{padding:18px;gap:18px;grid-template-columns:310px minmax(0,1fr)}.preview{top:148px;padding:16px}.panel{max-height:calc(100dvh - 158px)}.actions button{font-size:11px}.history-actions button{font-size:24px}.game{min-height:240px}}
 @media(max-width:760px){.app{display:flex;padding:12px}.preview{position:relative;top:auto;width:100%;padding:14px}.panel{max-height:none;width:100%}.top{position:relative}.brand{font-size:18px}.preview-head h2{font-size:20px}.game{min-height:220px;max-height:350px}.pane{padding:14px}.tabs{border-radius:20px 20px 0 0}.scene-tools{padding:12px}}
+/* Identical logical scene at every viewport size. Never resize individual game elements. */
+.game-viewport{position:relative;width:100%;aspect-ratio:1200/675;overflow:hidden;border-radius:14px;box-shadow:0 0 0 1px #9ec2c2,0 5px 0 #e3efec}
+.game-viewport>.game{position:absolute;width:1200px;height:675px;min-width:1200px;max-width:none;min-height:675px;max-height:none;aspect-ratio:auto;border:0;border-radius:0;box-shadow:none;transform-origin:0 0}
+.game .editorPanel,.game .card,.game .titleCard{padding:24px}
+.game .editorPanel h2,.game .titleCard h2,.game .end h2{font-size:30px}

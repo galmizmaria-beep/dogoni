@@ -62,3 +62,14 @@ for(const floor of [65,180]){
  assert.ok(peak>floor+147);assert.ok(state.enemyX>330);assert.equal(state.enemyY,floor);
 }
 console.log('PASS: enemy clears elevated obstacles and lands on its chosen level');
+
+// Dragging a half-size preview still edits logical scene coordinates, not screen pixels.
+api.setup(api.def());api.setCam(0);api.syncTasks();game.clientWidth=800;game.clientHeight=480;
+game.getBoundingClientRect=()=>({left:10,top:20,width:400,height:240});
+el('hero').getBoundingClientRect=()=>({left:120,top:208,width:52,height:52});
+gameListeners.get('pointerdown')(evt(130,220,'pointerdown'));gameListeners.get('pointermove')(evt(180,190));gameListeners.get('pointerup')(evt(180,190,'pointerup'));
+assert.equal(api.worldPoint('hero').x,320);assert.equal(api.worldPoint('hero').y,60);
+const hudTarget={closest:s=>s==='[data-object]'?el('hLives'):null};el('hLives').getBoundingClientRect=()=>({left:20,top:30,width:50,height:20});
+gameListeners.get('pointerdown')({...evt(30,40,'pointerdown'),target:hudTarget});gameListeners.get('pointermove')({...evt(80,70),target:hudTarget});gameListeners.get('pointerup')({...evt(80,70,'pointerup'),target:hudTarget});
+assert.ok(Math.abs(api.getP().uiPositions.hLives.x-120/700)<1e-9);assert.ok(Math.abs(api.getP().uiPositions.hLives.y-80/440)<1e-9);
+console.log('PASS: scaled pointer placement for actors and HUD');

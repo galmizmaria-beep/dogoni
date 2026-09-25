@@ -28,7 +28,7 @@ const sandbox = {document, window:{addEventListener(){}},TextEncoder,TextDecoder
 };
 vm.createContext(sandbox);
 vm.runInContext(mathSource,sandbox);
-const expose = `window.api={def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,sceneryTiles,heroTransform,validateTask,events,titleStyle,screenHTML,taskHTML,embeddedProject,exportGame,start,openTask,setLanguage,tr,fonts,fillLanguage,changed,resetHistory,restoreHistory,
+const expose = `window.api={def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,sceneryTiles,heroTransform,validateTask,events,titleStyle,screenHTML,taskHTML,embeddedProject,exportGame,start,openTask,setLanguage,tr,fonts,fillLanguage,changed,resetHistory,restoreHistory,stageFit,fitStage,iframeCode,setCam(v){editorCam=v;},
   stubHistoryViews(){fill=()=>{};assets=()=>{};},
   stubStartup(){scene=()=>{};position=()=>{};hud=()=>{};markSelection=()=>{};applyAppearance=()=>{};},
   stubViews(){taskList=()=>{};renderPreview=()=>{};},
@@ -158,3 +158,16 @@ get('redoBtn').onclick();assert.equal(api.getP().starts.hero.y,190);assert.equal
 api.getP().hudStyle.hLives.bg='#abcdef';api.changed();assert.equal(get('redoBtn').disabled,true);assert.equal(api.restoreHistory(1),false);
 await api.persist();assert.equal(JSON.parse(storage.get('dogoniProject')).hudStyle.hLives.bg,'#abcdef');
 console.log('PASS: raised start/replay/jump/wrong-answer placement, five languages, font choices, localized export, undo/redo and branching history');
+
+// Export and editor share a 1200 x 675 stage; only its outer transform varies.
+assert.match(html,/id="gameViewport"/);assert.match(englishExport,/id="gameViewport"/);assert.ok(!englishExport.includes('width:100vw!important;height:100dvh!important'));
+assert.match(css,/width:1200px;height:675px/);assert.ok(!api.iframeCode('test').includes('min-height'));assert.match(api.iframeCode('test'),/width="1200" height="675"/);
+for(const [width,height,scale,left,top] of [[600,337.5,.5,0,0],[1200,675,1,0,0],[1920,1080,1.6,0,0],[1200,575,575/675,(1200-1200*575/675)/2,0],[600,600,.5,0,131.25]]){
+ const fit=api.stageFit(width,height);assert.ok(Math.abs(fit.scale-scale)<1e-10);assert.ok(Math.abs(fit.left-left)<1e-10);assert.ok(Math.abs(fit.top-top)<1e-10);
+ get('gameViewport').clientWidth=width;get('gameViewport').clientHeight=height;api.fitStage();assert.equal(get('game').style.transform,'scale('+scale+')');
+ // Background, actor, HUD and card all retain their relative logical coordinates.
+ for(const [x,y] of [[0,0],[345,515],[1188,12],[600,337.5]]){assert.ok(Math.abs((x*fit.scale+fit.left-fit.left)/fit.scale-x)<1e-9);assert.ok(Math.abs((y*fit.scale+fit.top-fit.top)/fit.scale-y)<1e-9);}
+}
+console.log('PASS: unified stage export, proportional fit and letterboxing at five viewport sizes');
+
+api.setCam(185);const cameraProject=await api.embeddedProject(false);assert.equal(cameraProject.initialCamera,185);assert.equal(cameraProject.starts.hero.y,api.getP().starts.hero.y);console.log('PASS: exported camera and placed coordinates are preserved');
