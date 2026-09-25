@@ -5,6 +5,8 @@ import {TextEncoder,TextDecoder} from 'node:util';
 import {gzipSync,gunzipSync} from 'node:zlib';
 const root = new URL('../', import.meta.url);
 const source = await fs.readFile(new URL('dogoni_app.js', root), 'utf8');
+const mathSource=await fs.readFile(new URL('dogoni_math.js',root),'utf8');
+new vm.Script(mathSource);
 const html = await fs.readFile(new URL('index.html', root), 'utf8');
 new vm.Script(source);
 const ids = new Set([...html.matchAll(/id="([^"]+)"/g)].map(x => x[1]));
@@ -12,7 +14,7 @@ for (const [, id] of source.matchAll(/el\('([^']+)'\)/g)) {
   assert.ok(ids.has(id) || ['hero', 'enemy', 'obstacleList'].includes(id), `Missing element ${id}`);
 }
 function element() {
-  return {style: {}, dataset: {}, classList: {add(){},remove(){},toggle(){}}, textContent:'', value:'', setAttribute(){},focus(){}};
+  return {style: {}, dataset: {}, classList: {add(){},remove(){},toggle(){}}, textContent:'', value:'', setAttribute(){},focus(){},addEventListener(){},querySelectorAll(){return [];},offsetWidth:90,offsetHeight:30,clientHeight:480};
 }
 const elements = new Map();
 const document = {
@@ -25,6 +27,7 @@ const sandbox = {document, window:{addEventListener(){}},TextEncoder,TextDecoder
   localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)},
 };
 vm.createContext(sandbox);
+vm.runInContext(mathSource,sandbox);
 const expose = `window.api={def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,sceneryTiles,heroTransform,validateTask,events,titleStyle,screenHTML,taskHTML,embeddedProject,exportGame,
   stubViews(){taskList=()=>{};renderPreview=()=>{};},
   setup(p,r){P=p;rt=r;test=true;hold={left:false,right:false,down:false};},
@@ -65,13 +68,14 @@ p=api.normalize({bonusCount:4,tasks:[],a:{hero:'javascript:alert(1)'},lives:-2})
 await api.persist();assert.equal(JSON.parse(storage.get('dogoniProject')).tasks.length,4,'Project persists tasks');
 assert.ok(!html.includes('dogoni_patch.js'),'Broken legacy patch is disconnected');
 const css=await fs.readFile(new URL('dogoni_app.css',root),'utf8');
-sandbox.fetch=async url=>({ok:true,text:async()=>url.startsWith('dogoni_app.css')?css:source});
-p=api.def();for(const key of Object.keys(p.a))p.a[key]='data:image/webp;base64,AA==';p.ts.title='Title </script><script>alert(1)</script>';api.setup(p,state());
+sandbox.fetch=async url=>({ok:true,text:async()=>url.startsWith('dogoni_app.css')?css:url.startsWith('dogoni_math.js')?mathSource:source});
+p=api.def();for(const key of Object.keys(p.a))p.a[key]='data:image/webp;base64,AA==';p.starts.hero={x:345,y:78};p.uiPositions.hLives={x:.4,y:.25};p.hudStyle.hLives.bg='#123456';p.controlStyle.shape='square';p.ts.title='Title </script><script>alert(1)</script>';api.setup(p,state());
 const clone={className:'',querySelectorAll:()=>[],querySelector:()=>({replaceChildren(){}}),outerHTML:'<div id="game"></div>'};
 document.getElementById('game').cloneNode=()=>clone;
 const exported=await api.standalone();
 const scripts=[...exported.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 assert.equal(scripts.length,2,'Export safely embeds project and runtime');
+const exportedState={window:{}};vm.runInNewContext(scripts[0][1],exportedState);assert.equal(exportedState.window.DOGONI_PROJECT.starts.hero.x,345);assert.equal(exportedState.window.DOGONI_PROJECT.uiPositions.hLives.x,.4);assert.equal(exportedState.window.DOGONI_PROJECT.hudStyle.hLives.bg,'#123456');assert.equal(exportedState.window.DOGONI_PROJECT.controlStyle.shape,'square');assert.ok(scripts[1][1].includes('window.DogoniMath'),'Math renderer is embedded offline');
 for(const [,script] of scripts)new vm.Script(script);
 assert.ok(!exported.includes('<script src='));
 assert.ok(exported.includes('data:image/webp;base64,AA=='));
