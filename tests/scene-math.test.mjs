@@ -54,3 +54,11 @@ game.clientWidth=1000;api.applyAppearance();assert.equal(el('hLives').style.left
 const copied=api.normalize(JSON.parse(JSON.stringify(styled)));assert.equal(copied.hudStyle.hLives.scale,150);assert.equal(copied.controlStyle.shape,'square');assert.equal(copied.uiPositions.hLives.x,styled.uiPositions.hLives.x);
 assert.equal(mathAPI.splitOptions('$\\begin{cases}x=1\\\\\ny=2\\end{cases}$\n$\\frac{1}{2}$').length,2,'Multiline system stays one answer option');
 console.log(`PASS: ${formulas.length} PDF formulas, safe rendering, numeric answers, enemy jumps, pointer/touch placement, persistence, HUD/control styles`);
+
+// Auto-jumping also works on the enemy's raised track and lands back on it.
+for(const floor of [65,180]){
+ const project=api.def();project.starts.enemy.y=floor;project.enemySpeed=2.5;project.obs=[{x:170,y:floor,w:160,h:147}];const state={enemyX:40,enemyY:floor,enemyVy:0,enemyJumpVx:0};api.setup(project,state);let peak=floor;
+ for(let i=0;i<1800;i++){api.advanceEnemy(1/120);peak=Math.max(peak,state.enemyY);assert.ok(state.enemyY>=floor);assert.ok(!api.intersects(api.bodyBox(state.enemyX,state.enemyY,project.enemySize),project.obs[0]));}
+ assert.ok(peak>floor+147);assert.ok(state.enemyX>330);assert.equal(state.enemyY,floor);
+}
+console.log('PASS: enemy clears elevated obstacles and lands on its chosen level');

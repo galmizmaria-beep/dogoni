@@ -28,7 +28,9 @@ const sandbox = {document, window:{addEventListener(){}},TextEncoder,TextDecoder
 };
 vm.createContext(sandbox);
 vm.runInContext(mathSource,sandbox);
-const expose = `window.api={def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,sceneryTiles,heroTransform,validateTask,events,titleStyle,screenHTML,taskHTML,embeddedProject,exportGame,
+const expose = `window.api={def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,sceneryTiles,heroTransform,validateTask,events,titleStyle,screenHTML,taskHTML,embeddedProject,exportGame,start,openTask,setLanguage,tr,fonts,fillLanguage,changed,resetHistory,restoreHistory,
+  stubHistoryViews(){fill=()=>{};assets=()=>{};},
+  stubStartup(){scene=()=>{};position=()=>{};hud=()=>{};markSelection=()=>{};applyAppearance=()=>{};},
   stubViews(){taskList=()=>{};renderPreview=()=>{};},
   setup(p,r){P=p;rt=r;test=true;hold={left:false,right:false,down:false};},
   hold, getP:()=>P,getRT:()=>rt,right(v){hold.right=v;},left(v){hold.left=v;},selection:()=>sel,setDB(v){db=v;},setPrepared(v){preparedExport=v;},prepared:()=>preparedExport, stop(){test=false;}};`;
@@ -124,3 +126,35 @@ let copied='';sandbox.navigator={clipboard:{writeText:async s=>{copied=s;}}};
 api.stop();await api.exportGame('mini');assert.ok(api.prepared().compact);await get('copyBtn').onclick();assert.equal(copied,api.prepared().iframe);assert.ok(copied.length>0);
 get('taskQ').value='Edited after export';await get('taskQ').oninput();assert.equal(api.prepared(),null,'Edits invalidate previously prepared code');
 console.log('PASS: syntax, DOM IDs, movement, braking, obstacle collision/jump, bonus height, five answer types, migration, persistence and standalone export');
+
+// A raised placement is the actor's own landing level, including actual start/replay.
+api.stubStartup();p=api.def();p.sound=false;p.ts.on=false;p.timer=0;p.starts.hero={x:345,y:160};p.starts.enemy={x:30,y:75};p.obs=[];api.setup(p,state());api.start(true);r=api.getRT();
+assert.equal(r.x,345);assert.equal(r.y,160);assert.equal(r.enemyX,30);assert.equal(r.enemyY,75);
+p.bonusCount=0;for(let i=0;i<120;i++)api.step(1/120);
+assert.equal(r.y,160,'Hero does not fall from its chosen height');assert.equal(r.enemyY,75,'Enemy has an independent landing level');assert.equal(r.cam,0,'Camera does not shift the placed hero when starting');
+api.right(true);api.jump();let raisedPeak=r.y;for(let i=0;i<240;i++){api.step(1/120);raisedPeak=Math.max(raisedPeak,r.y);assert.ok(r.y>=160);}
+assert.ok(raisedPeak>320);assert.equal(r.y,160,'Hero lands at its editor height after jumping');assert.ok(r.x>500);
+p.bonusCount=3;api.start(true);assert.equal(api.getRT().y,160,'Replay uses saved placement');assert.equal(api.getRT().enemyY,75);
+// Incorrect answers also return the hero to its own floor.
+const taskFeedback=element(),taskCheck=element(),taskInput={value:'wrong'};
+get('taskCard').querySelector=s=>({'.feedback':taskFeedback,'.check':taskCheck,'.text-answer':taskInput}[s]);
+p.tasks[0]={type:'text',q:'2 + 2',ok:'4',fb:'',options:[]};api.openTask(0);taskCheck.onclick();taskCheck.onclick();assert.equal(api.getRT().y,160);assert.equal(api.getRT().lives,2);
+api.stop();
+// Language changes translate system UI/default screens, preserve authored text and export.
+p=api.def();api.setup(p,state());api.stop();p.ts.text='Авторское описание';p.tasks[0].q='Мой вопрос $x^2$';
+for(const [lang,button,taskLabel] of [['en','Start game','TASK'],['es','Jugar','TAREA'],['fr','Commencer','EXERCICE'],['de','Spiel starten','AUFGABE'],['ru','Начать игру','ЗАДАНИЕ']]){
+ api.setLanguage(lang);assert.equal(p.ts.btn,button);assert.equal(p.ts.text,'Авторское описание');assert.equal(p.tasks[0].q,'Мой вопрос $x^2$');assert.ok(api.taskHTML(p.tasks[0]).includes(taskLabel));assert.equal(api.normalize(JSON.parse(JSON.stringify(p))).language,lang);
+}
+api.setLanguage('en');api.fillLanguage();assert.equal(get('language').value,'en');assert.ok(Object.keys(api.fonts).length>=16);assert.ok(get('qFont').innerHTML.includes('Baskerville'));
+for(const name of Object.keys(api.fonts)){const project=api.normalize({ts:{titleFont:name,textFont:name},d:{qFont:name,aFont:name}});assert.equal(project.ts.titleFont,name);assert.equal(project.d.aFont,name);}
+for(const k of Object.keys(p.a))p.a[k]='data:image/webp;base64,AA==';
+const englishExport=await api.standalone();assert.match(englishExport,/<html lang="en">/);assert.ok(englishExport.includes('"language":"en"'));
+// Toolbar undo/redo restores whole edits and drops redo after a new edit.
+api.stubHistoryViews();api.resetHistory();const beforeHistory=JSON.stringify(p);p.starts.hero.y=190;api.changed();p.tasks.splice(0,1);p.bonusCount=2;api.syncTasks();api.changed();
+assert.equal(get('undoBtn').disabled,false);assert.equal(get('redoBtn').disabled,true);
+get('undoBtn').onclick();assert.equal(api.getP().tasks.length,3);assert.equal(api.getP().starts.hero.y,190);
+get('undoBtn').onclick();assert.equal(JSON.stringify(api.getP()),beforeHistory);assert.equal(get('undoBtn').disabled,true);
+get('redoBtn').onclick();assert.equal(api.getP().starts.hero.y,190);assert.equal(get('redoBtn').disabled,false);
+api.getP().hudStyle.hLives.bg='#abcdef';api.changed();assert.equal(get('redoBtn').disabled,true);assert.equal(api.restoreHistory(1),false);
+await api.persist();assert.equal(JSON.parse(storage.get('dogoniProject')).hudStyle.hLives.bg,'#abcdef');
+console.log('PASS: raised start/replay/jump/wrong-answer placement, five languages, font choices, localized export, undo/redo and branching history');
