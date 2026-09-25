@@ -10,7 +10,7 @@
 .top{position:sticky;top:0;z-index:100;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:var(--dark);color:#fff;box-shadow:0 2px 14px #0002}
 .brand{font-weight:900;margin-right:auto}.top button{border:0;border-radius:10px;padding:9px 12px;background:#145843;color:white}.top .primary{background:var(--green2)}
 .app{display:grid;grid-template-columns:400px 1fr;min-height:calc(100vh - 58px)}aside{background:#fff;border-right:1px solid var(--line);max-height:calc(100vh - 58px);overflow:auto;position:sticky;top:58px}
-.tabs{display:flex;gap:5px;padding:10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:10}.tabs button{flex:1;border:0;border-radius:9px;padding:9px 5px;background:#edf4f0;color:#39594d;font-size:12px;font-weight:800}.tabs button.active{background:var(--green);color:white}
+.tabs{display:flex;gap:5px;padding:10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:10;overflow-x:auto}.tabs button{flex:1 0 auto;border:0;border-radius:9px;padding:9px 7px;background:#edf4f0;color:#39594d;font-size:11px;font-weight:800}.tabs button.active{background:var(--green);color:white}
 .pane{display:none;padding:12px}.pane.active{display:block}.section{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;background:white}.section h3{font-size:14px;margin:0 0 10px}
 label{display:block;font-size:12px;font-weight:800;margin:9px 0 4px}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1;min-width:0}
 input[type=text],input[type=number],select,textarea,input[type=file]{width:100%;border:1px solid #c8dad1;border-radius:9px;padding:8px;background:white}input[type=range]{width:100%}input[type=color]{width:48px;height:36px;border:0;background:none}
@@ -29,6 +29,10 @@ input[type=text],input[type=number],select,textarea,input[type=file]{width:100%;
 .asset-lib{border:1px solid #d8e8e1;background:#f8fcfa;border-radius:13px;padding:10px;margin-top:10px}.asset-lib h4{margin:0 0 7px;font-size:13px}.asset-tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px}.asset-tools input{flex:1;min-width:140px}.catbar{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px}.catbar button{border:0;border-radius:999px;padding:5px 8px;background:#eaf3ee;color:#315746;font-size:10px;font-weight:800}.catbar button.active{background:var(--green);color:#fff}
 .asset-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-height:320px;overflow:auto}.asset{border:1px solid #d8e8e1;background:#fff;border-radius:10px;padding:5px;text-align:center;min-width:0}.asset:hover{border-color:#12ad6b}.asset.active{outline:2px solid #16b978}.asset img{width:100%;height:58px;object-fit:contain;display:block}.asset span{display:block;font-size:9px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.asset.bg img{object-fit:cover;height:52px}
 .tasks-list{display:grid;gap:8px}.task-item{border:1px solid var(--line);border-radius:10px;padding:9px}.task-item.active{outline:2px solid var(--green2);background:#f2fbf7}.task-item b{font-size:12px}.task-item .mini{font-size:10px;color:var(--muted)}
+.title-screen{position:absolute;z-index:40;inset:0;display:none;align-items:center;justify-content:center;padding:22px;background:linear-gradient(135deg,#06291fd9,#0f7a4fd9);backdrop-filter:blur(4px)}.title-screen.show{display:flex}.title-card{width:min(680px,94%);text-align:center;border-radius:28px;padding:32px;background:#ffffffee;box-shadow:0 28px 80px #0006;border:1px solid #ffffff80}.title-card img{max-width:min(280px,70%);max-height:240px;object-fit:contain;display:block;margin:0 auto 18px}.title-card h1{margin:0 0 10px;font-size:clamp(30px,5vw,56px);line-height:1}.title-card p{margin:0 auto 22px;max-width:560px;color:#547065}.big-play{border:0;border-radius:999px;padding:13px 24px;background:linear-gradient(135deg,#16b978,#0f7a4f);color:#fff;font-weight:900;font-size:16px;box-shadow:0 12px 30px #0f7a4f55}
+.end-card{width:min(620px,94%);text-align:center;border-radius:28px;padding:28px!important;box-shadow:0 28px 80px #0007!important;border:1px solid #ffffff70}.end-card img{max-width:min(280px,70%);max-height:220px;object-fit:contain;margin:0 auto 14px;display:block}.end-card h2{font-size:clamp(30px,5vw,52px);margin:0 0 10px}.end-stats{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:18px 0}.end-stat{padding:8px 12px;border-radius:999px;background:#ffffffb8;font-weight:900}.end-buttons{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.end-buttons button{border:0;border-radius:999px;padding:12px 20px;font-weight:900;font-size:15px}.end-primary{color:#fff;box-shadow:0 10px 28px #0002}.end-secondary{background:#ffffffd9;color:#17382c}
+.resume-overlay{position:fixed;z-index:1000;inset:0;display:none;align-items:center;justify-content:center;padding:20px;background:#05271ae6;backdrop-filter:blur(6px)}.resume-overlay.show{display:flex}.resume-box{width:min(520px,94vw);padding:26px;border-radius:24px;background:#fff;text-align:center;box-shadow:0 24px 80px #0008}.resume-box h2{margin:0 0 8px}.resume-box p{margin:0 0 20px;color:var(--muted)}.resume-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.resume-actions button{border:0;border-radius:999px;padding:12px 18px;font-weight:900}.resume-continue{background:var(--green2);color:#fff}.resume-reset{background:#ffe8e8;color:#9b2f2f}
+.screen-editor-preview{border-radius:18px;padding:18px;text-align:center;min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line)}.screen-editor-preview img{max-width:150px;max-height:100px;object-fit:contain}
 footer{padding:10px 16px;text-align:center;color:#6c8178;font-size:11px}
 @media(max-width:920px){.app{grid-template-columns:1fr}aside{position:relative;top:auto;max-height:none}.preview-wrap{padding:10px}.game{border-radius:12px}}
 </style>
@@ -41,7 +45,7 @@ footer{padding:10px 16px;text-align:center;color:#6c8178;font-size:11px}
 <div class="app">
 <aside>
  <div class="tabs">
-  <button class="active" data-tab="project">Проект</button><button data-tab="chars">Герои</button><button data-tab="world">Мир</button><button data-tab="tasks">Задания</button><button data-tab="design">Дизайн</button>
+  <button class="active" data-tab="project">Проект</button><button data-tab="title">Титул</button><button data-tab="chars">Герои</button><button data-tab="world">Мир</button><button data-tab="tasks">Задания</button><button data-tab="design">Дизайн</button><button data-tab="endings">Финалы</button>
  </div>
  <div class="pane active" id="project">
   <div class="section"><h3>Основные настройки</h3>
@@ -53,17 +57,27 @@ footer{padding:10px 16px;text-align:center;color:#6c8178;font-size:11px}
    <label><input id="soundEnabled" type="checkbox"> Звуковые эффекты</label>
   </div>
  </div>
+ <div class="pane" id="title">
+  <div class="section"><h3>Титульная страница</h3>
+   <label><input id="titleEnabled" type="checkbox"> Оставлять титульный лист перед началом игры</label>
+   <label>Заголовок</label><input id="titleScreenTitle" type="text">
+   <label>Описание</label><textarea id="titleScreenText" rows="3"></textarea>
+   <label>Картинка / GIF</label><input id="titleScreenFile" type="file" accept="image/*">
+   <label>Текст кнопки</label><input id="titleButtonText" type="text">
+   <div id="titleEditorPreview" class="screen-editor-preview"></div>
+  </div>
+ </div>
  <div class="pane" id="chars">
   <div class="section"><h3>Герой</h3><label>Размер героя</label><input id="heroSize" type="range" min="50" max="180" step="2"><label>Загрузить PNG/GIF</label><input id="heroFile" type="file" accept="image/*"><div id="heroBuiltin" class="asset-lib"></div><div id="heroNoto" class="asset-lib"></div></div>
   <div class="section"><h3>Противник</h3><label>Размер противника</label><input id="enemySize" type="range" min="50" max="180" step="2"><label>Загрузить PNG/GIF</label><input id="enemyFile" type="file" accept="image/*"><div id="enemyBuiltin" class="asset-lib"></div><div id="enemyNoto" class="asset-lib"></div></div>
  </div>
  <div class="pane" id="world">
-  <div class="section"><h3>Параллакс</h3><label>Скорость параллакса</label><input id="parallaxSpeed" type="range" min=".2" max="3" step=".1"><button class="btn green" id="applyBgSet">Применить готовые 3 слоя</button><div id="bgBuiltin" class="asset-lib"></div></div>
+  <div class="section"><h3>Фон и параллакс</h3><label>Загрузить свой фон PNG/JPG/GIF</label><input id="bgFile" type="file" accept="image/*"><div class="small">Свой фон отображается на весь игровой экран. Готовый набор ниже возвращает параллакс.</div><label>Скорость параллакса</label><input id="parallaxSpeed" type="range" min=".2" max="3" step=".1"><button class="btn green" id="applyBgSet">Применить готовые 3 слоя</button><div id="bgBuiltin" class="asset-lib"></div></div>
   <div class="section"><h3>Бонусы</h3><label>Количество бонусов = количество заданий</label><input id="bonusCount" type="number" min="1" max="30"><div id="bonusNoto" class="asset-lib"></div></div>
   <div class="section"><h3>Препятствия</h3><div id="obstacleNoto" class="asset-lib"></div><button class="btn" id="addObstacle">+ Добавить препятствие</button></div>
  </div>
  <div class="pane" id="tasks">
-  <div class="section"><h3>Задания</h3><div class="small">Количество заданий всегда равно количеству бонусов.</div><div id="tasksList" class="tasks-list"></div></div>
+  <div class="section"><h3>Задания</h3><div class="small">Количество заданий всегда равно количеству бонусов.</div><button class="btn green" id="addTask" type="button" style="margin:8px 0 10px">+ Добавить новое задание</button><div id="tasksList" class="tasks-list"></div></div>
   <div class="section"><h3>Редактирование задания</h3>
    <label>Тип</label><select id="taskType"><option value="single">Один ответ</option><option value="multiple">Несколько ответов</option><option value="text">Ввод ответа</option><option value="oral">Устный ответ</option><option value="order">Расставить по порядку</option></select>
    <label>Вопрос</label><textarea id="taskQuestion" rows="3"></textarea>
@@ -81,6 +95,22 @@ footer{padding:10px 16px;text-align:center;color:#6c8178;font-size:11px}
    <div class="row"><div><label>Фон ответа</label><input id="answerBg" type="color"></div><div><label>Цвет кнопки</label><input id="buttonBg" type="color"></div></div>
   </div>
  </div>
+ <div class="pane" id="endings">
+  <div class="section"><h3>Экран победы</h3>
+   <label>Заголовок</label><input id="winTitle" type="text">
+   <label>Текст</label><textarea id="winText" rows="2"></textarea>
+   <label>Картинка / GIF</label><input id="winFile" type="file" accept="image/*">
+   <div class="row"><div><label>Фон</label><input id="winBg" type="color"></div><div><label>Текст</label><input id="winColor" type="color"></div><div><label>Кнопка</label><input id="winButton" type="color"></div></div>
+   <div id="winEditorPreview" class="screen-editor-preview"></div>
+  </div>
+  <div class="section"><h3>Экран поражения</h3>
+   <label>Заголовок</label><input id="loseTitle" type="text">
+   <label>Текст</label><textarea id="loseText" rows="2"></textarea>
+   <label>Картинка / GIF</label><input id="loseFile" type="file" accept="image/*">
+   <div class="row"><div><label>Фон</label><input id="loseBg" type="color"></div><div><label>Текст</label><input id="loseColor" type="color"></div><div><label>Кнопка</label><input id="loseButton" type="color"></div></div>
+   <div id="loseEditorPreview" class="screen-editor-preview"></div>
+  </div>
+ </div>
 </aside>
 <main class="preview-wrap">
  <div class="preview-head"><h2>Предпросмотр</h2><div class="preview-actions"><button class="test" id="testBtn">▶ Тестировать игру</button><button class="stop" id="stopBtn">■ Вернуться к предпросмотру</button></div></div>
@@ -92,11 +122,13 @@ footer{padding:10px 16px;text-align:center;color:#6c8178;font-size:11px}
   <div class="controls"><button class="up" data-key="up">↑</button><button class="left" data-key="left">←</button><button class="down" data-key="down">↓</button><button class="right" data-key="right">→</button></div>
   <div class="editor-card-preview" id="editorCardPreview"><div class="card" id="editorCard"></div></div>
   <div class="modal" id="taskModal"><div class="card" id="taskCard"></div></div>
-  <div class="modal" id="endModal"><div class="card" id="endCard"></div></div>
+  <div class="modal" id="endModal"><div class="card end-card" id="endCard"></div></div>
+  <div class="title-screen" id="titleScreen"><div class="title-card" id="titleCard"></div></div>
  </div>
 </main>
 </div>
 <footer>Все права защищены и принадлежат Гальмиз Марии Александровне</footer>
+<div class="resume-overlay" id="resumeOverlay"><div class="resume-box"><h2>Продолжить работу?</h2><p>Найден сохранённый проект редактора.</p><div class="resume-actions"><button class="resume-continue" id="continueEditing" type="button">Продолжить редактирование</button><button class="resume-reset" id="startOver" type="button">Начать заново</button></div></div></div>
 <script>
 (function(){
 'use strict';
@@ -128,7 +160,9 @@ var I18N={
 };
 function defaults(){return{
  title:'Догони, если сможешь',language:'ru',fontFamily:'Inter',lives:3,timer:60,enemySpeed:.55,parallaxSpeed:1,sound:true,volume:.6,heroSize:104,enemySize:104,bonusCount:3,
- assets:{hero:builtin.heroBoy,enemy:builtin.enemyFox,bgFar:builtin.bgFar,bgMid:builtin.bgMid,bgNear:builtin.bgNear,bonus:NOTO_BASE+'2b50/512.gif',obstacle:NOTO_BASE+'1faa8/512.gif'},
+ titleScreen:{enabled:true,title:'Догони, если сможешь',text:'Собери бонусы, выполни задания и не дай сопернику догнать тебя.',image:'',button:'Начать игру'},
+ endings:{win:{title:'Победа!',text:'Отличная игра — все бонусы собраны!',image:'',bg:'#e9fff4',color:'#123d2f',button:'#16b978'},lose:{title:'Поражение',text:'Попробуй ещё раз — в следующий раз получится!',image:'',bg:'#fff0f0',color:'#5c2626',button:'#df5b5b'}},
+ assets:{hero:builtin.heroBoy,enemy:builtin.enemyFox,bgFar:builtin.bgFar,bgMid:builtin.bgMid,bgNear:builtin.bgNear,bgCustom:'',bonus:NOTO_BASE+'2b50/512.gif',obstacle:NOTO_BASE+'1faa8/512.gif'},
  obstacles:[{x:700,w:78,h:72},{x:1190,w:86,h:80},{x:1660,w:76,h:68}],
  tasks:[
   {type:'single',q:'Какой вариант правильный?',options:['Ответ 1','Ответ 2','Ответ 3'],correct:'1',feedback:'Отлично!'},
@@ -137,10 +171,11 @@ function defaults(){return{
  ],
  design:{cardBg:'#ffffff',questionColor:'#17382c',answerColor:'#17382c',questionSize:22,answerSize:16,answerBg:'#f7fbf9',buttonBg:'#16b978'}
 }}
-var project=loadLocal()||defaults(),selectedTask=0,notoIcons=[],notoReady=false,testMode=false,rt=null,raf=0,audioCtx=null;
+var savedProject=loadLocal(),project=savedProject||defaults(),hadSavedProject=!!savedProject,selectedTask=0,notoIcons=[],notoReady=false,testMode=false,rt=null,raf=0,audioCtx=null,held={left:false,right:false};
 function mergeDefaults(){
  var d=defaults();Object.keys(d).forEach(function(k){if(project[k]===undefined)project[k]=d[k]});
  project.assets=Object.assign({},d.assets,project.assets||{});project.design=Object.assign({},d.design,project.design||{});
+ project.titleScreen=Object.assign({},d.titleScreen,project.titleScreen||{});project.endings=project.endings||{};project.endings.win=Object.assign({},d.endings.win,project.endings.win||{});project.endings.lose=Object.assign({},d.endings.lose,project.endings.lose||{});
  if(!Array.isArray(project.tasks))project.tasks=d.tasks;if(!Array.isArray(project.obstacles))project.obstacles=d.obstacles;
  if(!project.bonusCount)project.bonusCount=Math.max(1,project.tasks.length||1);syncTaskCount(false)
 }
@@ -155,7 +190,7 @@ function syncTaskCount(save){
 }
 function t(){return I18N[project.language]||I18N.ru}
 function setPreviewFont(){document.getElementById('game').style.fontFamily=project.fontFamily+',sans-serif'}
-function showEditorCardForTab(tab){document.getElementById('editorCardPreview').classList.toggle('show',!testMode&&(tab==='tasks'||tab==='design'));renderEditorCard()}
+function showEditorCardForTab(tab){document.getElementById('editorCardPreview').classList.toggle('show',!testMode&&(tab==='tasks'||tab==='design'));renderEditorCard();renderScreenEditorPreviews()}
 $$('.tabs button').forEach(function(b){b.onclick=function(){$$('.tabs button').forEach(function(x){x.classList.remove('active')});$$('.pane').forEach(function(x){x.classList.remove('active')});b.classList.add('active');$('#'+b.dataset.tab).classList.add('active');showEditorCardForTab(b.dataset.tab)}});
 
 function bindModel(){
@@ -167,10 +202,26 @@ function bindModel(){
  $('#soundEnabled').checked=project.sound;$('#soundEnabled').onchange=function(){project.sound=this.checked;saveLocal()};
  ['cardBg','questionColor','answerColor','answerBg','buttonBg'].forEach(function(k){$('#'+k).value=project.design[k];$('#'+k).oninput=function(){project.design[k]=this.value;saveLocal();renderEditorCard()}});
  ['questionSize','answerSize'].forEach(function(k){$('#'+k).value=project.design[k];$('#'+k).oninput=function(){project.design[k]=Number(this.value);saveLocal();renderEditorCard()}});
+ $('#titleEnabled').checked=project.titleScreen.enabled;$('#titleEnabled').onchange=function(){project.titleScreen.enabled=this.checked;saveLocal();renderScreenEditorPreviews()};
+ [['titleScreenTitle','title'],['titleScreenText','text'],['titleButtonText','button']].forEach(function(x){$('#'+x[0]).value=project.titleScreen[x[1]];$('#'+x[0]).oninput=function(){project.titleScreen[x[1]]=this.value;saveLocal();renderScreenEditorPreviews()}});
+ ['win','lose'].forEach(function(kind){
+  var cap=kind==='win'?'win':'lose',obj=project.endings[kind];
+  $('#'+cap+'Title').value=obj.title;$('#'+cap+'Text').value=obj.text;$('#'+cap+'Bg').value=obj.bg;$('#'+cap+'Color').value=obj.color;$('#'+cap+'Button').value=obj.button;
+  $('#'+cap+'Title').oninput=function(){obj.title=this.value;saveLocal();renderScreenEditorPreviews()};
+  $('#'+cap+'Text').oninput=function(){obj.text=this.value;saveLocal();renderScreenEditorPreviews()};
+  $('#'+cap+'Bg').oninput=function(){obj.bg=this.value;saveLocal();renderScreenEditorPreviews()};
+  $('#'+cap+'Color').oninput=function(){obj.color=this.value;saveLocal();renderScreenEditorPreviews()};
+  $('#'+cap+'Button').oninput=function(){obj.button=this.value;saveLocal();renderScreenEditorPreviews()};
+ });
+ renderScreenEditorPreviews();
 }
 function fileToData(file,cb){var r=new FileReader();r.onload=function(){cb(r.result)};r.readAsDataURL(file)}
 $('#heroFile').onchange=function(){if(this.files[0])fileToData(this.files[0],function(u){project.assets.hero=u;saveLocal();renderPreview();markAssets()})};
 $('#enemyFile').onchange=function(){if(this.files[0])fileToData(this.files[0],function(u){project.assets.enemy=u;saveLocal();renderPreview();markAssets()})};
+$('#bgFile').onchange=function(){if(this.files[0])fileToData(this.files[0],function(u){project.assets.bgCustom=u;saveLocal();renderPreview()})};
+$('#titleScreenFile').onchange=function(){if(this.files[0])fileToData(this.files[0],function(u){project.titleScreen.image=u;saveLocal();renderScreenEditorPreviews()})};
+$('#winFile').onchange=function(){if(this.files[0])fileToData(this.files[0],function(u){project.endings.win.image=u;saveLocal();renderScreenEditorPreviews()})};
+$('#loseFile').onchange=function(){if(this.files[0])fileToData(this.files[0],function(u){project.endings.lose.image=u;saveLocal();renderScreenEditorPreviews()})};
 
 function assetCard(label,url,role,cls){
  var b=document.createElement('button');b.type='button';b.className='asset '+(cls||'');b.dataset.role=role;b.dataset.url=url;b.innerHTML='<img loading="lazy" src="'+url+'"><span>'+escapeHtml(label)+'</span>';
@@ -181,7 +232,7 @@ function mountBuiltin(){
  mount('heroBuiltin','Готовые герои',[['Герой',builtin.heroBoy,'hero'],['Героиня',builtin.heroGirl,'hero']]);
  mount('enemyBuiltin','Готовые противники',[['Лиса',builtin.enemyFox,'enemy'],['Робот',builtin.enemyRobot,'enemy']]);
  mount('bgBuiltin','Готовые фоны',[['Дальний',builtin.bgFar,'bgFar','bg'],['Средний',builtin.bgMid,'bgMid','bg'],['Ближний',builtin.bgNear,'bgNear','bg']]);
- $('#applyBgSet').onclick=function(){project.assets.bgFar=builtin.bgFar;project.assets.bgMid=builtin.bgMid;project.assets.bgNear=builtin.bgNear;saveLocal();renderPreview();markAssets()}
+ $('#applyBgSet').onclick=function(){project.assets.bgCustom='';project.assets.bgFar=builtin.bgFar;project.assets.bgMid=builtin.bgMid;project.assets.bgNear=builtin.bgNear;saveLocal();renderPreview();markAssets()}
 }
 var CATS={
  all:{label:'Все',keys:[]},
@@ -213,14 +264,20 @@ function loadNoto(){
   var fb=['1f3c3','1f916','1f47b','1f47e','2b50','1f3c6','1f381','1f48e','2764_fe0f','1f389','1faa8','1f525','1f6a7','1f4a3','1f335','26a0_fe0f'];notoIcons=fb.map(function(c){return{code:c,name:c,tags:c}});['heroNoto','enemyNoto','bonusNoto','obstacleNoto'].forEach(function(id){if($('#'+id)._draw)$('#'+id)._draw()})
  })
 }
-function markAssets(){$$('.asset').forEach(function(b){b.classList.toggle('active',project.assets[b.dataset.role]===b.dataset.url)})}
+function renderScreenEditorPreviews(){
+ var tp=$('#titleEditorPreview');if(tp){tp.innerHTML=(project.titleScreen.image?'<img src="'+project.titleScreen.image+'">':'')+'<b>'+escapeHtml(project.titleScreen.title)+'</b><span class="small">'+escapeHtml(project.titleScreen.text)+'</span><button class="btn green" type="button">'+escapeHtml(project.titleScreen.button)+'</button>'}
+ ['win','lose'].forEach(function(kind){var el=$('#'+kind+'EditorPreview'),o=project.endings[kind];if(!el)return;el.style.background=o.bg;el.style.color=o.color;el.innerHTML=(o.image?'<img src="'+o.image+'">':'')+'<b style="font-size:24px">'+escapeHtml(o.title)+'</b><span>'+escapeHtml(o.text)+'</span><button type="button" class="btn" style="background:'+o.button+';color:#fff">Переиграть</button>'})
+}
+function markAssets(){$('.asset').forEach(function(b){b.classList.toggle('active',project.assets[b.dataset.role]===b.dataset.url)})}
 
 function resetRuntime(){
  var g=$('#game'),ground=Math.round(g.clientHeight*.18);
  rt={running:false,x:220,y:0,vy:0,enemyX:40,camera:0,lives:project.lives,time:project.timer,collected:{},last:performance.now(),ground:ground}
 }
 function buildScene(){
- setPreviewFont();$('#far').style.backgroundImage='url("'+project.assets.bgFar+'")';$('#mid').style.backgroundImage='url("'+project.assets.bgMid+'")';$('#near').style.backgroundImage='url("'+project.assets.bgNear+'")';
+ setPreviewFont();
+ if(project.assets.bgCustom){$('#far').style.backgroundImage='url("'+project.assets.bgCustom+'")';$('#far').style.backgroundSize='cover';$('#far').style.backgroundRepeat='no-repeat';$('#mid').style.backgroundImage='none';$('#near').style.backgroundImage='none'}
+ else{$('#far').style.backgroundImage='url("'+project.assets.bgFar+'")';$('#far').style.backgroundSize='auto 110%';$('#far').style.backgroundRepeat='repeat-x';$('#mid').style.backgroundImage='url("'+project.assets.bgMid+'")';$('#near').style.backgroundImage='url("'+project.assets.bgNear+'")'}
  var w=$('#worldLayer');w.querySelectorAll('.dynamic').forEach(function(n){n.remove()});
  var hero=document.createElement('img');hero.className='sprite running dynamic';hero.id='hero';hero.src=project.assets.hero;hero.style.width=project.heroSize+'px';hero.style.height=project.heroSize+'px';w.appendChild(hero);
  var enemy=document.createElement('img');enemy.className='sprite running dynamic';enemy.id='enemy';enemy.src=project.assets.enemy;enemy.style.width=project.enemySize+'px';enemy.style.height=project.enemySize+'px';w.appendChild(enemy);
@@ -236,7 +293,7 @@ function positionAll(){
  var hero=$('#hero'),enemy=$('#enemy');if(hero){hero.style.left=(rt.x-cam)+'px';hero.style.bottom=(ground+rt.y)+'px'}if(enemy){enemy.style.left=(rt.enemyX-cam)+'px';enemy.style.bottom=ground+'px'}
  $$('.obstacle').forEach(function(el){el.style.left=(Number(el.dataset.x)-cam)+'px';el.style.bottom=ground+'px'});
  $$('.bonus').forEach(function(el){el.style.left=(Number(el.dataset.x)-cam)+'px';el.style.bottom=(ground+105)+'px';el.style.display=rt.collected&&rt.collected[Number(el.dataset.task)]?'none':'block'});
- var p=((performance.now()/40)+cam)*project.parallaxSpeed;$('#far').style.backgroundPosition=(-p*.10)+'px center';$('#mid').style.backgroundPosition=(-p*.28)+'px center';$('#near').style.backgroundPosition=(-p*.58)+'px center'
+ var p=((performance.now()/40)+cam)*project.parallaxSpeed;if(project.assets.bgCustom){$('#far').style.backgroundPosition='center center'}else{$('#far').style.backgroundPosition=(-p*.10)+'px center';$('#mid').style.backgroundPosition=(-p*.28)+'px center';$('#near').style.backgroundPosition=(-p*.58)+'px center'}
 }
 function updateHud(){var lang=t();$('#hudLives').textContent='❤️ '+lang.lives+': '+(rt?rt.lives:project.lives);$('#hudTimer').textContent='⏱ '+lang.time+': '+Math.max(0,Math.ceil(rt?rt.time:project.timer));$('#hudBonus').textContent='⭐ '+lang.bonus+': '+(rt?Object.keys(rt.collected).length:0)+'/'+project.bonusCount}
 function playerBox(x,y){
@@ -252,31 +309,41 @@ function beep(type){
 function move(dir){
  if(!testMode||!rt||!rt.running)return;
  if(dir==='up'&&rt.y<=1){rt.vy=650;beep('jump')}
- if(dir==='right'){var nx=rt.x+22;if(collidesObstacle(nx,rt.y)){beep('hit');return}else rt.x=nx}
- if(dir==='left'){var nx2=Math.max(0,rt.x-22);if(!collidesObstacle(nx2,rt.y))rt.x=nx2}
- rt.camera=Math.max(0,rt.x-260);checkBonus();positionAll()
 }
 function checkBonus(){
- $$('.bonus').forEach(function(el){var i=Number(el.dataset.task);if(rt.collected[i])return;var bx=Number(el.dataset.x);if(Math.abs((rt.x+project.heroSize*.35)-bx)<60&&rt.y<125){rt.collected[i]=true;el.style.display='none';beep('bonus');openTask(i)}})
+ var pb=playerBox(rt.x,rt.y);
+ $('.bonus').forEach(function(el){
+  var i=Number(el.dataset.task);if(rt.collected[i])return;
+  var bb={x:Number(el.dataset.x),y:105,w:54,h:54};
+  if(pb.x<bb.x+bb.w&&pb.x+pb.w>bb.x&&pb.y<bb.y+bb.h&&pb.y+pb.h>bb.y){rt.collected[i]=true;el.style.display='none';beep('bonus');openTask(i)}
+ })
 }
 function testLoop(now){
  if(!testMode||!rt||!rt.running)return;var dt=Math.min(.04,(now-rt.last)/1000);rt.last=now;
  rt.time-=dt;rt.enemyX+=project.enemySpeed*26*dt;
- if(rt.y>0||rt.vy>0){var oldY=rt.y;rt.vy-=1550*dt;var ny=rt.y+rt.vy*dt;if(ny<0){ny=0;rt.vy=0}rt.y=ny}
+ if(rt.y>0||rt.vy>0){rt.vy-=1550*dt;var ny=rt.y+rt.vy*dt;if(ny<0){ny=0;rt.vy=0}rt.y=ny}
+ var dx=(held.right?1:0)-(held.left?1:0),speed=285;if(dx){var nx=Math.max(0,rt.x+dx*speed*dt);if(!collidesObstacle(nx,rt.y))rt.x=nx}
+ rt.camera=Math.max(0,rt.x-260);checkBonus();if(!rt.running)return;
  if(rt.enemyX+project.enemySize*.55>=rt.x){finish(false,'Противник догнал героя');return}
  if(rt.time<=0){finish(false,'Время закончилось');return}
  if(rt.lives<=0){finish(false,'Жизни закончились');return}
  if(Object.keys(rt.collected).length>=project.bonusCount){finish(true,'Все бонусы собраны и задания выполнены');return}
  positionAll();updateHud();raf=requestAnimationFrame(testLoop)
 }
-function startTest(){
- cancelAnimationFrame(raf);testMode=true;$('#game').classList.add('testing');$('#editorCardPreview').classList.remove('show');$('#taskModal').classList.remove('show');$('#endModal').classList.remove('show');
- resetRuntime();buildScene();rt.running=true;rt.last=performance.now();positionAll();updateHud();raf=requestAnimationFrame(testLoop)
+function renderTitleScreen(){
+ var c=$('#titleCard');if(!c)return;c.innerHTML=(project.titleScreen.image?'<img src="'+project.titleScreen.image+'">':'')+'<h1>'+escapeHtml(project.titleScreen.title||project.title)+'</h1><p>'+escapeHtml(project.titleScreen.text)+'</p><button class="big-play" id="startFromTitle" type="button">'+escapeHtml(project.titleScreen.button||'Начать игру')+'</button>';
+ $('#startFromTitle').onclick=function(){$('#titleScreen').classList.remove('show');rt.running=true;rt.last=performance.now();raf=requestAnimationFrame(testLoop)}
 }
-function stopTest(){cancelAnimationFrame(raf);testMode=false;$('#game').classList.remove('testing');$('#taskModal').classList.remove('show');$('#endModal').classList.remove('show');renderPreview();var tab=$('.tabs button.active').dataset.tab;showEditorCardForTab(tab)}
-$('#testBtn').onclick=startTest;$('#stopBtn').onclick=stopTest;
-document.addEventListener('keydown',function(e){var m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',' ':'up'};if(m[e.key]&&testMode){e.preventDefault();move(m[e.key])}});
-$$('.controls button').forEach(function(b){b.onpointerdown=function(){move(b.dataset.key)}});
+function startTest(skipTitle){
+ cancelAnimationFrame(raf);held.left=false;held.right=false;testMode=true;$('#game').classList.add('testing');$('#editorCardPreview').classList.remove('show');$('#taskModal').classList.remove('show');$('#endModal').classList.remove('show');$('#titleScreen').classList.remove('show');
+ resetRuntime();buildScene();positionAll();updateHud();
+ if(project.titleScreen.enabled&&!skipTitle){renderTitleScreen();$('#titleScreen').classList.add('show');rt.running=false}else{rt.running=true;rt.last=performance.now();raf=requestAnimationFrame(testLoop)}
+}
+function stopTest(){cancelAnimationFrame(raf);held.left=false;held.right=false;testMode=false;$('#game').classList.remove('testing');$('#taskModal').classList.remove('show');$('#endModal').classList.remove('show');$('#titleScreen').classList.remove('show');renderPreview();var tab=$('.tabs button.active').dataset.tab;showEditorCardForTab(tab)}
+$('#testBtn').onclick=function(){startTest(false)};$('#stopBtn').onclick=stopTest;
+document.addEventListener('keydown',function(e){if(!testMode)return;if(e.key==='ArrowLeft'){e.preventDefault();held.left=true}if(e.key==='ArrowRight'){e.preventDefault();held.right=true}if((e.key==='ArrowUp'||e.key===' ')&&!e.repeat){e.preventDefault();move('up')}});
+document.addEventListener('keyup',function(e){if(e.key==='ArrowLeft')held.left=false;if(e.key==='ArrowRight')held.right=false});
+$('.controls button').forEach(function(b){b.onpointerdown=function(e){e.preventDefault();var k=b.dataset.key;if(k==='up')move('up');else if(k==='left'||k==='right')held[k]=true};var release=function(){var k=b.dataset.key;if(k==='left'||k==='right')held[k]=false};b.onpointerup=release;b.onpointercancel=release;b.onpointerleave=release});
 
 function taskHtml(t,interactive){
  var lang=t?window.__noop:null;var tr=I18N[project.language]||I18N.ru;var h='<h2 style="font-size:'+project.design.questionSize+'px;color:'+project.design.questionColor+'">'+tr.task+'</h2><p style="font-size:'+project.design.questionSize+'px;color:'+project.design.questionColor+'">'+escapeHtml(t.q)+'</p>';
@@ -299,25 +366,29 @@ function openTask(i){
  function resume(){$('#taskModal').classList.remove('show');if(rt.lives<=0){finish(false,'Жизни закончились');return}rt.running=true;rt.last=performance.now();raf=requestAnimationFrame(testLoop)}
 }
 function finish(win,msg){
- if(!rt)return;rt.running=false;cancelAnimationFrame(raf);beep(win?'win':'lose');var tr=t();$('#endCard').style.background=project.design.cardBg;$('#endCard').innerHTML='<h2>'+(win?tr.win:tr.lose)+'</h2><p>'+escapeHtml(msg)+'</p><p><b>'+tr.bonus+':</b> '+Object.keys(rt.collected).length+'/'+project.bonusCount+' · <b>'+tr.lives+':</b> '+rt.lives+'</p><button class="ok" id="restartEnd">Играть снова</button>';$('#endModal').classList.add('show');$('#restartEnd').onclick=startTest
+ if(!rt)return;rt.running=false;cancelAnimationFrame(raf);held.left=false;held.right=false;beep(win?'win':'lose');var tr=t(),o=win?project.endings.win:project.endings.lose,c=$('#endCard');
+ c.style.background=o.bg;c.style.color=o.color;
+ c.innerHTML=(o.image?'<img src="'+o.image+'">':'')+'<h2>'+escapeHtml(o.title||(win?tr.win:tr.lose))+'</h2><p>'+escapeHtml(o.text||msg)+'</p><div class="end-stats"><span class="end-stat">⭐ '+Object.keys(rt.collected).length+'/'+project.bonusCount+'</span><span class="end-stat">❤️ '+rt.lives+'</span><span class="end-stat">⏱ '+Math.max(0,Math.ceil(rt.time))+'</span></div><div class="end-buttons"><button class="end-primary" id="replayEnd" style="background:'+o.button+'">Переиграть</button><button class="end-secondary" id="restartEnd">Начать заново</button></div>';
+ $('#endModal').classList.add('show');$('#replayEnd').onclick=function(){startTest(true)};$('#restartEnd').onclick=function(){startTest(false)}
 }
 
 function renderTasks(){
  var list=$('#tasksList');list.innerHTML='';project.tasks.forEach(function(task,i){var d=document.createElement('div');d.className='task-item'+(i===selectedTask?' active':'');d.innerHTML='<b>'+(i+1)+'. '+escapeHtml(task.q)+'</b><div class="mini">'+task.type+'</div>';d.onclick=function(){selectedTask=i;renderTasks();fillTask();renderEditorCard()};list.appendChild(d)});fillTask()
 }
 function fillTask(){var q=project.tasks[selectedTask];if(!q)return;$('#taskType').value=q.type;$('#taskQuestion').value=q.q;$('#taskOptions').value=(q.options||[]).join('\n');$('#taskCorrect').value=q.correct||'';$('#taskFeedback').value=q.feedback||''}
-function saveTaskFromForm(){var q=project.tasks[selectedTask];if(!q)return;q.type=$('#taskType').value;q.q=$('#taskQuestion').value;q.options=$('#taskOptions').value.split('\n').filter(Boolean);q.correct=$('#taskCorrect').value;q.feedback=$('#taskFeedback').value;saveLocal();renderTasks();renderEditorCard()}
-['taskType','taskQuestion','taskOptions','taskCorrect','taskFeedback'].forEach(function(id){$('#'+id).addEventListener('input',function(){saveTaskFromForm()})});
-$('#saveTask').onclick=saveTaskFromForm;
+function saveTaskFromForm(refresh){var q=project.tasks[selectedTask];if(!q)return;q.type=$('#taskType').value;q.q=$('#taskQuestion').value;q.options=$('#taskOptions').value.split('\n').filter(function(x){return x.trim()!==''});q.correct=$('#taskCorrect').value;q.feedback=$('#taskFeedback').value;saveLocal();if(refresh)renderTasks();renderEditorCard()}
+['taskType','taskQuestion','taskOptions','taskCorrect','taskFeedback'].forEach(function(id){$('#'+id).addEventListener('input',function(){saveTaskFromForm(false)})});
+$('#saveTask').onclick=function(){saveTaskFromForm(true)};
+$('#addTask').onclick=function(){project.bonusCount=Math.min(30,project.tasks.length+1);syncTaskCount(false);selectedTask=project.tasks.length-1;$('#bonusCount').value=project.bonusCount;saveLocal();renderTasks();renderPreview();renderEditorCard()};
 $('#addObstacle').onclick=function(){project.obstacles.push({x:700+project.obstacles.length*320,w:78,h:72});saveLocal();renderPreview()};
 
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 $('#saveBtn').onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(project,null,2)],{type:'application/json'}));a.download='dogoni-project.json';a.click();URL.revokeObjectURL(a.href)};
 $('#loadBtn').onclick=function(){$('#loadFile').click()};$('#loadFile').onchange=function(){if(!this.files[0])return;var r=new FileReader();r.onload=function(){try{project=JSON.parse(r.result);mergeDefaults();saveLocal();location.reload()}catch(e){alert('Не удалось загрузить проект')}};r.readAsText(this.files[0])};
 function standalone(){
- var clone=document.documentElement.cloneNode(true);var aside=clone.querySelector('aside'),top=clone.querySelector('.top'),footer=clone.querySelector('footer'),head=clone.querySelector('.preview-head'),badge=clone.querySelector('.preview-badge'),ep=clone.querySelector('#editorCardPreview');if(aside)aside.remove();if(top)top.remove();if(footer)footer.remove();if(head)head.remove();if(badge)badge.remove();if(ep)ep.remove();
+ var clone=document.documentElement.cloneNode(true);var aside=clone.querySelector('aside'),top=clone.querySelector('.top'),footer=clone.querySelector('footer'),head=clone.querySelector('.preview-head'),badge=clone.querySelector('.preview-badge'),ep=clone.querySelector('#editorCardPreview'),ro=clone.querySelector('#resumeOverlay');if(aside)aside.remove();if(top)top.remove();if(footer)footer.remove();if(head)head.remove();if(badge)badge.remove();if(ep)ep.remove();if(ro)ro.remove();
  var app=clone.querySelector('.app');app.style.display='block';var pw=clone.querySelector('.preview-wrap');pw.style.padding='0';var game=clone.querySelector('.game');game.style.width='100vw';game.style.height='100vh';game.style.aspectRatio='auto';
- var sc=clone.querySelector('script');sc.textContent=sc.textContent.replace("var project=loadLocal()||defaults()","var project="+JSON.stringify(project)).replace("bindModel();mountBuiltin();loadNoto();renderTasks();renderPreview();markAssets();","renderPreview();startTest();");
+ var sc=clone.querySelector('script');sc.textContent=sc.textContent.replace("var savedProject=loadLocal(),project=savedProject||defaults(),hadSavedProject=!!savedProject","var savedProject=null,project="+JSON.stringify(project)+",hadSavedProject=false").replace("bindModel();mountBuiltin();loadNoto();renderTasks();renderPreview();markAssets();\nif(hadSavedProject){$('#resumeOverlay').classList.add('show')}\n$('#continueEditing').onclick=function(){$('#resumeOverlay').classList.remove('show')};\n$('#startOver').onclick=function(){localStorage.removeItem('dogoniProject');location.reload()};","renderPreview();startTest(false);");
  return '<!doctype html>\n'+clone.outerHTML
 }
 $('#htmlBtn').onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([standalone()],{type:'text/html'}));a.download='dogoni-game.html';a.click();URL.revokeObjectURL(a.href)};
@@ -325,6 +396,9 @@ $('#miniBtn').onclick=function(){window.__mini=standalone().replace(/>\s+</g,'><
 $('#copyBtn').onclick=function(){var code=window.__mini||standalone().replace(/>\s+</g,'><');var iframe='<iframe style="width:100%;height:100%;border:0" srcdoc="'+code.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"></iframe>';navigator.clipboard.writeText(iframe).then(function(){alert('Код для Genially скопирован')})};
 
 bindModel();mountBuiltin();loadNoto();renderTasks();renderPreview();markAssets();
+if(hadSavedProject){$('#resumeOverlay').classList.add('show')}
+$('#continueEditing').onclick=function(){$('#resumeOverlay').classList.remove('show')};
+$('#startOver').onclick=function(){localStorage.removeItem('dogoniProject');location.reload()};
 })();
 </script>
 </body>
