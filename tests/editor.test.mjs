@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
+import {TextEncoder,TextDecoder} from 'node:util';
+import {gzipSync,gunzipSync} from 'node:zlib';
 const root = new URL('../', import.meta.url);
 const source = await fs.readFile(new URL('dogoni_app.js', root), 'utf8');
 const html = await fs.readFile(new URL('index.html', root), 'utf8');
@@ -10,22 +12,23 @@ for (const [, id] of source.matchAll(/el\('([^']+)'\)/g)) {
   assert.ok(ids.has(id) || ['hero', 'enemy', 'obstacleList'].includes(id), `Missing element ${id}`);
 }
 function element() {
-  return {style: {}, dataset: {}, classList: {add(){},remove(){},toggle(){}}, textContent:'', value:'', setAttribute(){}};
+  return {style: {}, dataset: {}, classList: {add(){},remove(){},toggle(){}}, textContent:'', value:'', setAttribute(){},focus(){}};
 }
 const elements = new Map();
 const document = {
   getElementById(id) {if (!elements.has(id)) elements.set(id, {...element(),clientWidth:800}); return elements.get(id);},
-  querySelectorAll(){return [];},
+  querySelectorAll(){return [];},addEventListener(){},
 };
 const storage = new Map();
-const sandbox = {document, window:{},performance:{now:()=>0}, console,
+const sandbox = {document, window:{addEventListener(){}},TextEncoder,TextDecoder,performance:{now:()=>0}, console,
   setTimeout:()=>0,clearTimeout(){},requestAnimationFrame:()=>0,cancelAnimationFrame(){},
   localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)},
 };
 vm.createContext(sandbox);
-const expose = `window.api={def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,
+const expose = `window.api={def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,sceneryTiles,heroTransform,validateTask,events,titleStyle,screenHTML,taskHTML,embeddedProject,exportGame,
+  stubViews(){taskList=()=>{};renderPreview=()=>{};},
   setup(p,r){P=p;rt=r;test=true;hold={left:false,right:false,down:false};},
-  hold, getP:()=>P,getRT:()=>rt,right(v){hold.right=v;}, stop(){test=false;}};`;
+  hold, getP:()=>P,getRT:()=>rt,right(v){hold.right=v;},left(v){hold.left=v;},selection:()=>sel,setDB(v){db=v;},setPrepared(v){preparedExport=v;},prepared:()=>preparedExport, stop(){test=false;}};`;
 vm.runInContext(source.replace(/init\(\);\s*\}\)\(\);\s*$/,expose+'})();'),sandbox);
 const api=sandbox.window.api;
 const state=(x=220)=>({x,y:0,vx:0,vy:0,enemyX:-10000,cam:0,col:{},lives:3,time:60,run:true});
@@ -63,7 +66,7 @@ await api.persist();assert.equal(JSON.parse(storage.get('dogoniProject')).tasks.
 assert.ok(!html.includes('dogoni_patch.js'),'Broken legacy patch is disconnected');
 const css=await fs.readFile(new URL('dogoni_app.css',root),'utf8');
 sandbox.fetch=async url=>({ok:true,text:async()=>url.startsWith('dogoni_app.css')?css:source});
-p=api.def();for(const key of Object.keys(p.a))p.a[key]='data:image/png;base64,AA==';p.ts.title='Title </script><script>alert(1)</script>';api.setup(p,state());
+p=api.def();for(const key of Object.keys(p.a))p.a[key]='data:image/webp;base64,AA==';p.ts.title='Title </script><script>alert(1)</script>';api.setup(p,state());
 const clone={className:'',querySelectorAll:()=>[],querySelector:()=>({replaceChildren(){}}),outerHTML:'<div id="game"></div>'};
 document.getElementById('game').cloneNode=()=>clone;
 const exported=await api.standalone();
@@ -71,6 +74,49 @@ const scripts=[...exported.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 assert.equal(scripts.length,2,'Export safely embeds project and runtime');
 for(const [,script] of scripts)new vm.Script(script);
 assert.ok(!exported.includes('<script src='));
-assert.ok(exported.includes('data:image/png;base64,AA=='));
+assert.ok(exported.includes('data:image/webp;base64,AA=='));
 assert.ok((await api.standalone(true)).length<exported.length,'Compact export reduces size');
+// Exercise the actual event handlers against a minimal DOM adapter.
+api.stubViews();api.events();api.stop();
+p=api.def();api.setup(p,state());api.stop();api.syncTasks();
+assert.equal(p.obs.length,p.tasks.length,'One obstacle per task');
+const get=id=>document.getElementById(id);
+for(const [id,value] of Object.entries({taskType:'text',taskQ:'Сколько будет 2 + 2?',taskOpt:'',taskOk:'4',taskFb:'Правильно'}))get(id).value=value;
+await get('saveTask').onclick();
+assert.equal(JSON.parse(storage.get('dogoniProject')).tasks[0].ok,'4');
+assert.match(get('taskStatus').textContent,/сохранено/,'Save button has adjacent feedback');
+for(let i=0;i<3;i++)await get('delTask').onclick();
+assert.equal(p.tasks.length,0,'Last task can be deleted');assert.equal(p.bonusCount,0);assert.equal(p.obs.length,0);
+get('addTask').onclick();assert.equal(p.tasks.length,1);assert.equal(p.obs.length,1);assert.equal(p.bonusCount,1);
+await api.persist();assert.equal(JSON.parse(storage.get('dogoniProject')).tasks.length,1);
+assert.match(get('taskStatus').textContent,/Добавлено/);
+assert.ok(api.validateTask({type:'order',q:'Order',options:['A','B','C'],ok:'1,2'}));
+assert.equal(api.validateTask({type:'order',q:'Order',options:['A','B','C'],ok:'3,1,2'}),'');
+// Failed persistence must not claim success next to the save button.
+const write=sandbox.localStorage.setItem;sandbox.localStorage.setItem=()=>{throw Error('quota');};
+get('taskType').value='text';get('taskQ').value='Question';get('taskOk').value='answer';await get('saveTask').onclick();
+assert.match(get('taskStatus').textContent,/Не удалось/);sandbox.localStorage.setItem=write;
+p=api.def();p.bonusCount=0;p.obs=[];p.sound=false;r=state(800);api.setup(p,r);api.left(true);for(let i=0;i<40;i++)api.step(1/120);
+assert.ok(r.x<800,'Hero can return to a missed bonus');assert.equal(r.facing,-1);assert.match(api.heroTransform(),/scaleX\(-1\)/);p.heroFlip=true;assert.match(api.heroTransform(),/scaleX\(1\)/);
+for(const cam of [0,500,4000,20000]){const tiles=api.sceneryTiles(800,480,cam,3);assert.ok(tiles[0].left<=0);assert.ok(tiles[2].left+tiles[2].width>=800);for(let i=0;i<2;i++){assert.ok(tiles[i].left+tiles[i].width>=tiles[i+1].left,'No gap between scenery tiles');assert.equal(tiles[i].flip,-tiles[i+1].flip,'Matching mirrored edges');}}
+p=api.normalize({ts:{bg:'#abcdef',border:'#123456',borderWidth:4,titleFont:'Georgia',textFont:'Verdana',titleSize:48,textSize:22,titleColor:'#112233',textColor:'#445566'},d:{qFont:'Georgia',aFont:'Verdana'}});api.setup(p,state());
+const titleCard=element();api.titleStyle(titleCard);assert.equal(titleCard.style.background,'#abcdef');assert.equal(titleCard.style.border,'4px solid #123456');
+assert.match(api.screenHTML(p.ts,'title'),/font-family:Georgia, serif;font-size:48px;color:#112233/);assert.match(api.screenHTML(p.ts,'title'),/font-family:Verdana, sans-serif;font-size:22px;color:#445566/);
+assert.match(api.taskHTML(p.tasks[0]),/font-family:Georgia/);assert.match(api.taskHTML(p.tasks[0]),/font-family:Verdana/);
+const old=p.ts.title;const rebuilt=api.normalize(JSON.parse(JSON.stringify(p)));assert.equal(rebuilt.ts.titleFont,'Georgia');assert.equal(rebuilt.d.aFont,'Verdana');
+assert.ok(!html.includes('class="ground"'),'No artificial ground stripe');
+// Compression is lossless and preserves animated image data.
+for(const k of Object.keys(p.a))p.a[k]='data:image/webp;base64,AA==';p.ts.img='data:image/gif;base64,GIF89a';
+const compactProject=await api.embeddedProject(true);assert.equal(compactProject.ts.img,p.ts.img);assert.equal(compactProject.a.bm,'');assert.equal(compactProject.a.bn,'');
+sandbox.CompressionStream=class{};sandbox.DecompressionStream=class{};
+sandbox.Blob=class{constructor(parts){this.parts=parts;}stream(){return{pipeThrough:()=>({buffer:gzipSync(this.parts.join(''))})};}};
+sandbox.Response=class{constructor(stream){this.stream=stream;}async arrayBuffer(){const a=this.stream.buffer;return a.buffer.slice(a.byteOffset,a.byteOffset+a.byteLength);}};
+sandbox.btoa=b=>Buffer.from(b,'binary').toString('base64');
+const packed=await api.standalone(true);const payload=packed.match(/atob\("([A-Za-z0-9+/=]+)"\)/)[1];
+const unpacked=gunzipSync(Buffer.from(payload,'base64')).toString('utf8');assert.ok(unpacked.includes('data:image/gif;base64,GIF89a'));assert.ok(packed.length<unpacked.length*.75,'Compression materially reduces embedded code');
+for(const [,script] of unpacked.matchAll(/<script>([\s\S]*?)<\/script>/g))new vm.Script(script);
+// The prepared compact payload is used by the Genially copy action.
+let copied='';sandbox.navigator={clipboard:{writeText:async s=>{copied=s;}}};
+api.stop();await api.exportGame('mini');assert.ok(api.prepared().compact);await get('copyBtn').onclick();assert.equal(copied,api.prepared().iframe);assert.ok(copied.length>0);
+get('taskQ').value='Edited after export';await get('taskQ').oninput();assert.equal(api.prepared(),null,'Edits invalidate previously prepared code');
 console.log('PASS: syntax, DOM IDs, movement, braking, obstacle collision/jump, bonus height, five answer types, migration, persistence and standalone export');
