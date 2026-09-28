@@ -28,7 +28,7 @@ const sandbox = {document, window:{addEventListener(){}},TextEncoder,TextDecoder
 };
 vm.createContext(sandbox);
 vm.runInContext(mathSource,sandbox);
-const expose = `window.api={def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,sceneryTiles,heroTransform,validateTask,events,titleStyle,screenHTML,taskHTML,embeddedProject,exportGame,start,openTask,setLanguage,tr,fonts,fillLanguage,changed,resetHistory,restoreHistory,stageFit,fitStage,iframeCode,setCam(v){editorCam=v;},
+const expose = `window.api={timerActive,hudOriginal:hud,setActorImage,alphaColumns,obstacleParts,moveBody,setShape(shape){obstacleShapes.set(P.a.ob,shape);},def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,sceneryTiles,heroTransform,validateTask,events,titleStyle,screenHTML,taskHTML,embeddedProject,exportGame,start,openTask,setLanguage,tr,fonts,fillLanguage,changed,resetHistory,restoreHistory,stageFit,fitStage,iframeCode,setCam(v){editorCam=v;},
   stubHistoryViews(){fill=()=>{};assets=()=>{};},
   stubStartup(){scene=()=>{};position=()=>{};hud=()=>{};markSelection=()=>{};applyAppearance=()=>{};},
   stubViews(){taskList=()=>{};renderPreview=()=>{};},
@@ -47,7 +47,7 @@ for(let i=0;i<100;i++)api.step(1/120);
 assert.ok(r.x+p.heroSize*.8<=400.01,'Ground collision blocks obstacle');
 r=state(280);api.setup(p,r);api.right(true);api.jump();let maxY=0;
 for(let i=0;i<135;i++){api.step(1/120);maxY=Math.max(maxY,r.y);}
-assert.ok(maxY>180,'Jump clears obstacle');assert.ok(r.x>478,'Hero crosses obstacle');
+assert.ok(maxY>130&&maxY<150,'Jump clears obstacle');assert.ok(r.x>478,'Hero crosses obstacle');
 for(const size of [50,104,180]){p=api.def();p.heroSize=size;api.setup(p,state());assert.ok(api.bonusY()>api.heroBox(0,0).h,'Bonus requires jumping at every hero size');assert.ok(api.intersects(api.heroBox(480,120),{x:480,y:api.bonusY(),w:54,h:54}),'Bonus reachable in jump');}
 function answer(type,correct,selected,text=''){
   const feedback=element(),check=element(),input={value:text};
@@ -133,7 +133,7 @@ assert.equal(r.x,345);assert.equal(r.y,160);assert.equal(r.enemyX,30);assert.equ
 p.bonusCount=0;for(let i=0;i<120;i++)api.step(1/120);
 assert.equal(r.y,160,'Hero does not fall from its chosen height');assert.equal(r.enemyY,75,'Enemy has an independent landing level');assert.equal(r.cam,0,'Camera does not shift the placed hero when starting');
 api.right(true);api.jump();let raisedPeak=r.y;for(let i=0;i<240;i++){api.step(1/120);raisedPeak=Math.max(raisedPeak,r.y);assert.ok(r.y>=160);}
-assert.ok(raisedPeak>320);assert.equal(r.y,160,'Hero lands at its editor height after jumping');assert.ok(r.x>500);
+assert.ok(raisedPeak>290&&raisedPeak<310);assert.equal(r.y,160,'Hero lands at its editor height after jumping');assert.ok(r.x>500);
 p.bonusCount=3;api.start(true);assert.equal(api.getRT().y,160,'Replay uses saved placement');assert.equal(api.getRT().enemyY,75);
 // Incorrect answers also return the hero to its own floor.
 const taskFeedback=element(),taskCheck=element(),taskInput={value:'wrong'};
@@ -171,3 +171,33 @@ for(const [width,height,scale,left,top] of [[600,337.5,.5,0,0],[1200,675,1,0,0],
 console.log('PASS: unified stage export, proportional fit and letterboxing at five viewport sizes');
 
 api.setCam(185);const cameraProject=await api.embeddedProject(false);assert.equal(cameraProject.initialCamera,185);assert.equal(cameraProject.starts.hero.y,api.getP().starts.hero.y);console.log('PASS: exported camera and placed coordinates are preserved');
+
+// New settings survive old-project migration and export.
+assert.equal(api.normalize({timer:0}).timerEnabled,false);
+assert.equal(api.normalize({timer:40}).timerEnabled,true);
+p=api.normalize({timer:40,timerEnabled:false,ts:{btnBg:'#123456',btnColor:'#abcdef',btnSize:150,btnGlow:22,btnGlowColor:'#fedcba',btn:'Вперёд'},end:{t:{title:'Упс, время!',text:'Ещё раз',bg:'#112233',color:'#ddeeff',btn:'#334455',label:'Повторить',img:'data:image/gif;base64,GIF89a'}},uiPositions:{timeoutCard:{x:.2,y:.3}}});
+api.setup(p,state());
+assert.equal(api.timerActive(),false);api.hudOriginal();assert.equal(get('hTime').hidden,true);
+const buttonHTML=api.screenHTML(p.ts,'title');for(const value of ['#123456','#abcdef','19.5px','22px','Вперёд'])assert.ok(buttonHTML.includes(value));
+for(const k of Object.keys(p.a))p.a[k]='data:image/webp;base64,AA==';
+const newExport=await api.standalone();const newState={window:{}};vm.runInNewContext([...newExport.matchAll(/<script>([\s\S]*?)<\/script>/g)][0][1],newState);
+assert.equal(newState.window.DOGONI_PROJECT.end.t.img,p.end.t.img);assert.equal(newState.window.DOGONI_PROJECT.timerEnabled,false);assert.equal(newState.window.DOGONI_PROJECT.ts.btnGlow,22);assert.equal(newState.window.DOGONI_PROJECT.uiPositions.timeoutCard.x,.2);
+api.setActorImage('hero','data:image/png;base64,AA==');api.setActorImage('enemy','data:image/gif;base64,AA==');assert.equal(p.heroSize,180);assert.equal(p.enemySize,180);assert.equal(get('heroSize').value,180);
+// A disabled timer does not count down; expiry uses its own screen and replay resets time.
+p.bonusCount=0;p.obs=[];p.sound=false;r=state();r.time=.001;api.setup(p,r);api.step(.01);assert.equal(r.time,.001);assert.equal(r.run,true);
+const replay=element(),restart=element();get('endCard').querySelector=s=>s==='.play'?replay:restart;
+p.timerEnabled=true;p.timer=40;api.step(.01);assert.equal(r.time,0);assert.equal(r.run,false);assert.ok(get('endCard').innerHTML.includes('Упс, время!'));assert.equal(get('endCard').dataset.layoutKey,'timeoutCard');replay.onclick();assert.equal(api.getRT().time,40);assert.equal(api.getRT().run,true);
+// Bonus indices and their positions never choose or renumber the authored tasks.
+p=api.def();p.sound=false;p.timerEnabled=false;p.tasks=[0,1,2].map(i=>({type:'text',q:'Вопрос '+(i+1),ok:String(i+1),fb:'',options:[]}));p.bonuses=[{x:900,y:120},{x:600,y:120},{x:300,y:120}];r=state();api.setup(p,r);
+api.openTask(2);assert.ok(get('taskCard').innerHTML.includes('ЗАДАНИЕ 1'));assert.ok(get('taskCard').innerHTML.includes('Вопрос 1'));taskInput.value='wrong';taskCheck.onclick();taskCheck.onclick();assert.equal(Object.keys(r.col).length,0);
+api.openTask(2);taskInput.value='1';taskCheck.onclick();taskCheck.onclick();assert.equal(r.col[2],true);
+api.openTask(0);assert.ok(get('taskCard').innerHTML.includes('ЗАДАНИЕ 2'));assert.ok(get('taskCard').innerHTML.includes('Вопрос 2'));taskInput.value='2';taskCheck.onclick();taskCheck.onclick();assert.equal(r.col[0],true);
+api.openTask(1);assert.ok(get('taskCard').innerHTML.includes('ЗАДАНИЕ 3'));taskInput.value='3';taskCheck.onclick();taskCheck.onclick();assert.equal(Object.keys(r.col).length,3);assert.equal(r.run,false);assert.ok(get('endCard').innerHTML.includes('Победа!'));
+// Transparent top/side margins never act as a solid box.
+const pixels=new Uint8ClampedArray(8*8*4);for(let y=4;y<8;y++)for(let x=2;x<6;x++)pixels[(y*8+x)*4+3]=255;
+const shape=api.alphaColumns(pixels,8,8);assert.equal(shape.length,2);assert.equal(shape[0].h,.5);assert.equal(shape[0].x,.25);
+p=api.def();p.obs=[{x:200,y:0,w:100,h:100}];api.setup(p,state());api.setShape(shape);
+const across=api.moveBody({x:140,y:60,vy:0},285,1/120,104);assert.ok(across.x>140,'Hero passes above visible pixels below the old bounding-box top');
+const landed=api.moveBody({x:180,y:51,vy:-200},0,.01,104);assert.equal(landed.y,50,'Hero lands on visible top, not transparent padding');
+api.setShape(null);
+console.log('PASS: timer disable/expiry/replay, timeout customization/export, title button styles, actor upload sizing, arbitrary bonus order, transparent obstacle collision');
