@@ -135,7 +135,7 @@ assert.equal(r.y,160,'Hero does not fall from its chosen height');assert.equal(r
 api.right(true);api.jump();let raisedPeak=r.y;for(let i=0;i<240;i++){api.step(1/120);raisedPeak=Math.max(raisedPeak,r.y);assert.ok(r.y>=160);}
 assert.ok(raisedPeak>290&&raisedPeak<310);assert.equal(r.y,160,'Hero lands at its editor height after jumping');assert.ok(r.x>500);
 p.bonusCount=3;api.start(true);assert.equal(api.getRT().y,160,'Replay uses saved placement');assert.equal(api.getRT().enemyY,75);
-// Incorrect answers also return the hero to its own floor.
+// Incorrect answers remove one life without moving the hero or repeating the question.
 const taskFeedback=element(),taskCheck=element(),taskInput={value:'wrong'};
 get('taskCard').querySelector=s=>({'.feedback':taskFeedback,'.check':taskCheck,'.text-answer':taskInput}[s]);
 p.tasks[0]={type:'text',q:'2 + 2',ok:'4',fb:'',options:[]};api.openTask(0);taskCheck.onclick();taskCheck.onclick();assert.equal(api.getRT().y,160);assert.equal(api.getRT().lives,2);
@@ -189,8 +189,8 @@ const replay=element(),restart=element();get('endCard').querySelector=s=>s==='.p
 p.timerEnabled=true;p.timer=40;api.step(.01);assert.equal(r.time,0);assert.equal(r.run,false);assert.ok(get('endCard').innerHTML.includes('Упс, время!'));assert.equal(get('endCard').dataset.layoutKey,'timeoutCard');replay.onclick();assert.equal(api.getRT().time,40);assert.equal(api.getRT().run,true);
 // Bonus indices and their positions never choose or renumber the authored tasks.
 p=api.def();p.sound=false;p.timerEnabled=false;p.tasks=[0,1,2].map(i=>({type:'text',q:'Вопрос '+(i+1),ok:String(i+1),fb:'',options:[]}));p.bonuses=[{x:900,y:120},{x:600,y:120},{x:300,y:120}];r=state();api.setup(p,r);
-api.openTask(2);assert.ok(get('taskCard').innerHTML.includes('ЗАДАНИЕ 1'));assert.ok(get('taskCard').innerHTML.includes('Вопрос 1'));taskInput.value='wrong';taskCheck.onclick();taskCheck.onclick();assert.equal(Object.keys(r.col).length,0);
-api.openTask(2);taskInput.value='1';taskCheck.onclick();taskCheck.onclick();assert.equal(r.col[2],true);
+api.openTask(2);assert.ok(get('taskCard').innerHTML.includes('ЗАДАНИЕ 1'));assert.ok(get('taskCard').innerHTML.includes('Вопрос 1'));taskInput.value='wrong';taskCheck.onclick();taskCheck.onclick();assert.equal(Object.keys(r.col).length,1);assert.equal(r.lives,2);assert.equal(r.col[2],true);assert.equal(r.x,220);assert.equal(r.y,0);
+const previousQuestion=get('taskCard').innerHTML;api.openTask(2);assert.equal(get('taskCard').innerHTML,previousQuestion);assert.equal(r.run,true);taskCheck.onclick();assert.equal(r.lives,2,'Repeated Continue does not deduct another life');
 api.openTask(0);assert.ok(get('taskCard').innerHTML.includes('ЗАДАНИЕ 2'));assert.ok(get('taskCard').innerHTML.includes('Вопрос 2'));taskInput.value='2';taskCheck.onclick();taskCheck.onclick();assert.equal(r.col[0],true);
 api.openTask(1);assert.ok(get('taskCard').innerHTML.includes('ЗАДАНИЕ 3'));taskInput.value='3';taskCheck.onclick();taskCheck.onclick();assert.equal(Object.keys(r.col).length,3);assert.equal(r.run,false);assert.ok(get('endCard').innerHTML.includes('Победа!'));
 // Transparent top/side margins never act as a solid box.
@@ -220,3 +220,12 @@ for(const k of Object.keys(p.a))p.a[k]='data:image/webp;base64,AA==';p.enemyDela
 const settingExport=await api.standalone();const settingState={window:{}};vm.runInNewContext([...settingExport.matchAll(/<script>([\s\S]*?)<\/script>/g)][0][1],settingState);
 assert.equal(settingState.window.DOGONI_PROJECT.enemyDelay,4.5);assert.equal(settingState.window.DOGONI_PROJECT.d.cardSize,60);assert.equal(settingState.window.DOGONI_PROJECT.end.t.imgSize,320);
 console.log('PASS: shared task font, task card sizing, icon-free screens, final image sizing, delayed enemy start and replay, exported settings');
+
+// A wrong final answer ends the game; losing the final life takes priority over completion.
+for(const lives of [1,2]){
+ p=api.def();p.sound=false;p.bonusCount=1;p.tasks=[{type:'text',q:'Последний вопрос',ok:'yes',fb:'',options:[]}];r=state();r.lives=lives;r.x=350;r.y=175;r.vy=120;api.setup(p,r);
+ api.openTask(0);taskInput.value='no';taskCheck.onclick();assert.match(taskFeedback.innerHTML,/Неверно/);assert.ok(!taskFeedback.innerHTML.includes('Попробуйте ещё раз'));
+ taskCheck.onclick();assert.equal(r.lives,lives-1);assert.equal(r.col[0],true);assert.equal(r.x,350);assert.equal(r.y,175);assert.equal(r.vy,120);assert.equal(r.run,false);assert.ok(get('endCard').innerHTML.includes(lives===1?'Поражение':'Победа!'));
+ taskCheck.onclick();assert.equal(r.lives,lives-1);
+}
+console.log('PASS: incorrect answers consumed once, no teleport or repeated question, final-life defeat takes priority');
