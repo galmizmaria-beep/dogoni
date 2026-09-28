@@ -56,7 +56,8 @@ function hud(){el('hTime').hidden=!timerActive();const values={hLives:'♥ '+(rt
 function release(){hold.left=hold.right=hold.down=false;}
 function hideModals(){for(const id of ['taskModal','endModal','titleScreen'])el(id).classList.remove('show');}
 function start(skip=false){if(!P.tasks.length){notify('Добавьте хотя бы одно задание для запуска игры.');taskNotice('Добавьте задание для запуска игры.');return;}epoch++;cancelAnimationFrame(raf);release();test=true;el('game').classList.add('testing');el('game').classList.remove('screen-preview');el('editorOverlay').classList.remove('show');hideModals();rt={x:P.starts.hero.x,y:P.starts.hero.y,facing:1,vx:0,vy:0,enemyX:P.starts.enemy.x,enemyY:P.starts.enemy.y,enemyVy:0,enemyJumpVx:0,enemyWait:P.enemyDelay,cam:editorCam,anchor:P.starts.hero.x-editorCam,col:{},lives:P.lives,time:P.timer,run:false,last:performance.now()};scene();position();applyAppearance();applyGameLanguage();hud();markSelection();if(P.ts.on&&!skip){el('titleCard').innerHTML=screenHTML(P.ts,'title');titleStyle(el('titleCard'));el('titleScreen').classList.add('show');applyCardPosition(el('titleCard'),'titleCard');el('titleCard').querySelector('button').onclick=()=>{hideModals();run();};}else run();}
-function run(){if(!test)return;release();rt.run=true;rt.last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);}
+function focusGame(){const game=el('game');if(!game)return;game.tabIndex=-1;game.focus({preventScroll:true});}
+function run(){if(!test)return;release();rt.run=true;focusGame();rt.last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);}
 function stopGame(){epoch++;cancelAnimationFrame(raf);test=false;rt=null;release();hideModals();el('game').classList.remove('testing');renderPreview();}
 function jump(){if(test&&rt?.run&&grounded(rt.x,rt.y,P.heroSize,groundLevel('hero'))){const ahead=P.obs.map(obstacleBounds).filter(o=>o.x+o.w>rt.x&&o.x<rt.x+P.heroSize+220&&o.y<rt.y+P.heroSize);const height=Math.max(140,...ahead.map(o=>o.y+o.h-rt.y+45));rt.vy=Math.sqrt(2*1550*height);beep(460);}}
 function heroBox(x,y){return{x:x+P.heroSize*.18,y,w:P.heroSize*.62,h:P.heroSize*.82*(hold.down?.6:1)};}
@@ -67,7 +68,18 @@ function wireAnswer(card,t,done,preview=false){let answers=[],locked=false;const
 function openTask(i){if(rt.col[i])return;let settled=false;rt.run=false;release();cancelAnimationFrame(raf);beep(780);const taskIndex=Object.keys(rt.col).length;let card=el('taskCard');applyTaskStyle(card);card.innerHTML=taskHTML(P.tasks[taskIndex],taskIndex);el('taskModal').classList.add('show');applyCardPosition(card,'taskCard');wireAnswer(card,P.tasks[taskIndex],ok=>{if(settled)return;settled=true;el('taskModal').classList.remove('show');rt.col[i]=true;if(!ok)rt.lives--;position();hud();if(rt.lives<=0)return finish(false);if(Object.keys(rt.col).length===P.bonusCount)return finish(true);run();});}
 function finish(win){rt.run=false;release();cancelAnimationFrame(raf);const kind=win==='t'?'t':win?'w':'l',o=P.end[kind];el('endCard').style.background=o.bg;el('endCard').style.color=o.color;el('endCard').innerHTML=screenHTML(o,kind)+'<p class="result-stats">★ '+Object.keys(rt.col).length+' / '+P.bonusCount+' &nbsp; ♥ '+rt.lives+'</p><button class="secondary">'+tr('Начать заново')+'</button>';el('endCard').querySelector('.play').onclick=()=>start(true);el('endCard').querySelector('.secondary').onclick=()=>start(false);el('endModal').classList.add('show');applyCardPosition(el('endCard'),endCardKey(kind));}
 function beep(hz){if(!P.sound||!P.vol)return;try{au=au||new(window.AudioContext||window.webkitAudioContext)();au.resume();let o=au.createOscillator(),g=au.createGain();o.connect(g);g.connect(au.destination);o.frequency.value=hz;g.gain.value=.08*P.vol;o.start();g.gain.exponentialRampToValueAtTime(.001,au.currentTime+.12);o.stop(au.currentTime+.12);}catch{}}
-function controls(){const keys={ArrowLeft:'left',ArrowRight:'right',ArrowDown:'down',ArrowUp:'up',' ':'up'};document.addEventListener('keydown',e=>{if(!test||!rt?.run||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const k=keys[e.key];if(!k)return;e.preventDefault();if(k==='up'){if(!e.repeat)jump();}else hold[k]=true;});document.addEventListener('keyup',e=>{if(keys[e.key])hold[keys[e.key]]=false;});window.addEventListener('blur',release);document.addEventListener('visibilitychange',()=>{release();if(rt)rt.last=performance.now();});$$('.controls button').forEach(b=>{b.onpointerdown=e=>{if(!test)return;e.preventDefault();b.setPointerCapture(e.pointerId);if(b.dataset.k==='up')jump();else hold[b.dataset.k]=true;};b.onpointerup=b.onpointercancel=b.onlostpointercapture=()=>hold[b.dataset.k]=false;});window.addEventListener('resize',()=>{if(test){position();applyAppearance();el('game').querySelectorAll('[data-layout-key]').forEach(c=>applyCardPosition(c,c.dataset.layoutKey));}else renderPreview();});}
+function controls(){
+ const keys={ArrowLeft:'left',ArrowRight:'right',ArrowDown:'down',ArrowUp:'up',Space:'up',' ':'up'};
+ const typing=e=>/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName)||e.target?.isContentEditable;
+ document.addEventListener('keydown',e=>{if(!test||!rt?.run||typing(e))return;const k=keys[e.code]||keys[e.key];if(!k)return;e.preventDefault();e.stopPropagation();if(k==='up'){if(!e.repeat)jump();}else hold[k]=true;},true);
+ document.addEventListener('keyup',e=>{const k=keys[e.code]||keys[e.key];if(k)hold[k]=false;},true);
+ // Keyboard input belongs to this frame as soon as the player starts or touches the game.
+ el('game').addEventListener('pointerdown',e=>{if(test&&rt?.run&&!typing(e))focusGame();},true);
+ window.addEventListener('blur',release);document.addEventListener('visibilitychange',()=>{release();if(rt)rt.last=performance.now();});
+ $$('.controls button').forEach(b=>{b.onpointerdown=e=>{if(!test||!rt?.run)return;e.preventDefault();focusGame();b.setPointerCapture(e.pointerId);if(b.dataset.k==='up')jump();else hold[b.dataset.k]=true;};b.onpointerup=b.onpointercancel=b.onlostpointercapture=()=>hold[b.dataset.k]=false;});
+ window.addEventListener('resize',()=>{if(test){position();applyAppearance();el('game').querySelectorAll('[data-layout-key]').forEach(c=>applyCardPosition(c,c.dataset.layoutKey));}else renderPreview();});
+}
+
 function download(text,name,type){const a=document.createElement('a'),u=URL.createObjectURL(new Blob([text],{type}));a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
 function bytes(s){return new TextEncoder().encode(s).length;}
 function sizeLabel(n){return n<1024*1024?(n/1024).toFixed(1)+' КБ':(n/1024/1024).toFixed(2)+' МБ';}
@@ -107,7 +119,7 @@ async function packHTML(html){
 }
 async function standalone(compact=false){
   const read=async url=>{const r=await fetch(url);if(!r.ok)throw Error('Не удалось загрузить файлы игры');return r.text();};
-  const [css,appjs,mathjs,project]=await Promise.all([read('dogoni_app.css?v=10'),read('dogoni_app.js?v=10'),read('dogoni_math.js?v=10'),embeddedProject(compact)]);const js=mathjs+'\n'+appjs;
+  const [css,appjs,mathjs,project]=await Promise.all([read('dogoni_app.css?v=11'),read('dogoni_app.js?v=11'),read('dogoni_math.js?v=11'),embeddedProject(compact)]);const js=mathjs+'\n'+appjs;
   const game=el('game').cloneNode(true);game.className='game';game.querySelectorAll('.dyn,.scenery-tile').forEach(x=>x.remove());
   for(const id of ['editorOverlay','taskCard','endCard','titleCard'])game.querySelector('#'+id).replaceChildren();
   game.querySelectorAll('.show').forEach(x=>x.classList.remove('show'));game.querySelectorAll('.object-selected').forEach(x=>x.classList.remove('object-selected'));
