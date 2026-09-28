@@ -28,7 +28,7 @@ const sandbox = {document, window:{addEventListener(){}},TextEncoder,TextDecoder
 };
 vm.createContext(sandbox);
 vm.runInContext(mathSource,sandbox);
-const expose = `window.api={timerActive,hudOriginal:hud,setActorImage,alphaColumns,obstacleParts,moveBody,setShape(shape){obstacleShapes.set(P.a.ob,shape);},def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,sceneryTiles,heroTransform,validateTask,events,titleStyle,screenHTML,taskHTML,embeddedProject,exportGame,start,openTask,setLanguage,tr,fonts,fillLanguage,changed,resetHistory,restoreHistory,stageFit,fitStage,iframeCode,setCam(v){editorCam=v;},
+const expose = `window.api={applyTaskStyle,run,timerActive,hudOriginal:hud,setActorImage,alphaColumns,obstacleParts,moveBody,setShape(shape){obstacleShapes.set(P.a.ob,shape);},def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,sceneryTiles,heroTransform,validateTask,events,titleStyle,screenHTML,taskHTML,embeddedProject,exportGame,start,openTask,setLanguage,tr,fonts,fillLanguage,changed,resetHistory,restoreHistory,stageFit,fitStage,iframeCode,setCam(v){editorCam=v;},
   stubHistoryViews(){fill=()=>{};assets=()=>{};},
   stubStartup(){scene=()=>{};position=()=>{};hud=()=>{};markSelection=()=>{};applyAppearance=()=>{};},
   stubViews(){taskList=()=>{};renderPreview=()=>{};},
@@ -108,7 +108,7 @@ for(const cam of [0,500,4000,20000]){const tiles=api.sceneryTiles(800,480,cam,3)
 p=api.normalize({ts:{bg:'#abcdef',border:'#123456',borderWidth:4,titleFont:'Georgia',textFont:'Verdana',titleSize:48,textSize:22,titleColor:'#112233',textColor:'#445566'},d:{qFont:'Georgia',aFont:'Verdana'}});api.setup(p,state());
 const titleCard=element();api.titleStyle(titleCard);assert.equal(titleCard.style.background,'#abcdef');assert.equal(titleCard.style.border,'4px solid #123456');
 assert.match(api.screenHTML(p.ts,'title'),/font-family:Georgia, serif;font-size:48px;color:#112233/);assert.match(api.screenHTML(p.ts,'title'),/font-family:Verdana, sans-serif;font-size:22px;color:#445566/);
-assert.match(api.taskHTML(p.tasks[0]),/font-family:Georgia/);assert.match(api.taskHTML(p.tasks[0]),/font-family:Verdana/);
+assert.match(api.taskHTML(p.tasks[0]),/font-family:Georgia/);assert.ok(!api.taskHTML(p.tasks[0]).includes('font-family:Verdana'));
 const old=p.ts.title;const rebuilt=api.normalize(JSON.parse(JSON.stringify(p)));assert.equal(rebuilt.ts.titleFont,'Georgia');assert.equal(rebuilt.d.aFont,'Verdana');
 assert.ok(!html.includes('class="ground"'),'No artificial ground stripe');
 // Compression is lossless and preserves animated image data.
@@ -201,3 +201,22 @@ const across=api.moveBody({x:140,y:60,vy:0},285,1/120,104);assert.ok(across.x>14
 const landed=api.moveBody({x:180,y:51,vy:-200},0,.01,104);assert.equal(landed.y,50,'Hero lands on visible top, not transparent padding');
 api.setShape(null);
 console.log('PASS: timer disable/expiry/replay, timeout customization/export, title button styles, actor upload sizing, arbitrary bonus order, transparent obstacle collision');
+
+// One font applies to question, answer choices, text entry, and the action button.
+p=api.normalize({d:{qFont:'Georgia',aFont:'Verdana',cardSize:150},enemyDelay:3,end:{w:{imgSize:240},l:{imgSize:180},t:{imgSize:320}}});api.setup(p,state());
+for(const type of ['single','multiple','order','text','oral']){const markup=api.taskHTML({...p.tasks[0],type});assert.ok(!markup.includes('Verdana'));assert.match(markup,/class="check play" style="font-family:Georgia/);if(type==='text')assert.match(markup,/class="text-answer"[^>]*font-family:Georgia/);}
+const taskStyleCard=element();api.applyTaskStyle(taskStyleCard);assert.equal(taskStyleCard.style.width,'min(96%, 660px)');assert.equal(taskStyleCard.style.height,'540px');assert.equal(taskStyleCard.style.fontFamily,'Georgia, serif');
+p.d.cardSize=60;api.applyTaskStyle(taskStyleCard);assert.equal(taskStyleCard.style.height,'216px');
+for(const kind of ['title','w','l','t']){const screen=kind==='title'?p.ts:p.end[kind];screen.img='data:image/png;base64,AA==';const markup=api.screenHTML(screen,kind);assert.ok(!markup.includes('screen-icon'));if(kind!=='title')assert.ok(markup.includes('height:'+screen.imgSize+'px;'));}
+assert.equal(api.normalize({}).enemyDelay,3);assert.equal(api.normalize({d:{cardSize:999},end:{w:{imgSize:-1}},enemyDelay:999}).d.cardSize,180);assert.equal(api.normalize({end:{w:{imgSize:-1}}}).end.w.imgSize,40);
+// Countdown only advances during gameplay, resumes across tasks, and resets on replay.
+p.sound=false;p.timerEnabled=false;p.obs=[];p.bonuses=[{x:10000,y:1000},{x:11000,y:1000},{x:12000,y:1000}];p.ts.on=false;api.start(true);r=api.getRT();const initialEnemy=r.enemyX;api.right(true);
+for(let i=0;i<240;i++)api.step(1/120);assert.equal(r.enemyX,initialEnemy);assert.ok(r.x>p.starts.hero.x);assert.ok(r.enemyWait>.99&&r.enemyWait<1.01);
+const waitBeforeTask=r.enemyWait;api.openTask(2);assert.equal(r.enemyWait,waitBeforeTask);api.run();assert.equal(r.enemyWait,waitBeforeTask);
+for(let i=0;i<150;i++)api.step(1/120);assert.ok(r.enemyX>initialEnemy);assert.equal(r.enemyWait,0);
+api.start(true);assert.equal(api.getRT().enemyWait,3);assert.equal(api.getRT().enemyX,initialEnemy);
+p.enemyDelay=0;api.start(true);api.step(1/120);assert.ok(api.getRT().enemyX>initialEnemy);
+for(const k of Object.keys(p.a))p.a[k]='data:image/webp;base64,AA==';p.enemyDelay=4.5;
+const settingExport=await api.standalone();const settingState={window:{}};vm.runInNewContext([...settingExport.matchAll(/<script>([\s\S]*?)<\/script>/g)][0][1],settingState);
+assert.equal(settingState.window.DOGONI_PROJECT.enemyDelay,4.5);assert.equal(settingState.window.DOGONI_PROJECT.d.cardSize,60);assert.equal(settingState.window.DOGONI_PROJECT.end.t.imgSize,320);
+console.log('PASS: shared task font, task card sizing, icon-free screens, final image sizing, delayed enemy start and replay, exported settings');
