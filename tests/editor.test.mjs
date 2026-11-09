@@ -28,7 +28,7 @@ const sandbox = {document, window:{addEventListener(){}},TextEncoder,TextDecoder
 };
 vm.createContext(sandbox);
 vm.runInContext(mathSource,sandbox);
-const expose = `window.api={applyTaskStyle,run,timerActive,hudOriginal:hud,setActorImage,alphaColumns,obstacleParts,moveBody,setShape(shape){obstacleShapes.set(P.a.ob,shape);},def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,sceneryTiles,heroTransform,validateTask,events,titleStyle,screenHTML,taskHTML,embeddedProject,exportGame,start,openTask,setLanguage,tr,fonts,fillLanguage,changed,resetHistory,restoreHistory,stageFit,fitStage,iframeCode,setCam(v){editorCam=v;},
+const expose = `window.api={finish,applyEndStyle,applyTaskStyle,run,timerActive,hudOriginal:hud,setActorImage,alphaColumns,obstacleParts,moveBody,setShape(shape){obstacleShapes.set(P.a.ob,shape);},def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,sceneryTiles,heroTransform,validateTask,events,titleStyle,screenHTML,taskHTML,embeddedProject,exportGame,start,openTask,setLanguage,tr,fonts,fillLanguage,changed,resetHistory,restoreHistory,stageFit,fitStage,iframeCode,setCam(v){editorCam=v;},
   stubHistoryViews(){fill=()=>{};assets=()=>{};},
   stubStartup(){scene=()=>{};position=()=>{};hud=()=>{};markSelection=()=>{};applyAppearance=()=>{};},
   stubViews(){taskList=()=>{};renderPreview=()=>{};},
@@ -275,3 +275,17 @@ await get('saveTask').onclick();assert.equal(p.tasks[0].img,taskImage);
 imageInput.files=[{type:'text/plain',data:'bad'}];await imageInput.onchange({target:imageInput});
 assert.equal(p.tasks[0].img,taskImage,'Unsupported file keeps the existing image');
 console.log('PASS: file upload, concurrent text edits and unsupported file handling');
+
+// All final screens inherit the selected task font, including their controls and stats.
+for(const family of ['Georgia','Courier New','system']){
+ p=api.normalize({d:{qFont:family}});api.setup(p,state());
+ for(const kind of ['w','l','t']){
+  const previewCard=element();api.applyEndStyle(previewCard,p.end[kind]);
+  assert.equal(previewCard.style.fontFamily,api.fonts[family]);
+  api.finish(kind==='w'?true:kind==='l'?false:'t');
+  assert.equal(get('endCard').style.fontFamily,api.fonts[family]);
+  assert.ok(get('endCard').innerHTML.includes('result-stats'));
+  assert.ok(get('endCard').innerHTML.includes('class="secondary"'));
+ }
+}
+console.log('PASS: selected font on victory, defeat and timeout screens in preview and gameplay');
