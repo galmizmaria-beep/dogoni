@@ -43,3 +43,5 @@ label{color:#566265;font-weight:600}input,select,textarea{border-color:#e0ded5;b
 .game-viewport>.game{position:absolute;width:1200px;height:675px;min-width:1200px;max-width:none;min-height:675px;max-height:none;aspect-ratio:auto;border:0;border-radius:0;box-shadow:none;transform-origin:0 0}
 .game .editorPanel,.game .card,.game .titleCard{padding:24px}
 .game .editorPanel h2,.game .titleCard h2,.game .end h2{font-size:30px}
+
+.task-image-preview img{display:block;max-width:100%;max-height:160px;object-fit:contain;margin:12px auto}.game .task-image{display:block;width:auto;height:auto;max-width:100%;max-height:220px;object-fit:contain;margin:12px auto;flex-shrink:0}

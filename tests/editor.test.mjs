@@ -229,3 +229,49 @@ for(const lives of [1,2]){
  taskCheck.onclick();assert.equal(r.lives,lives-1);
 }
 console.log('PASS: incorrect answers consumed once, no teleport or repeated question, final-life defeat takes priority');
+
+// Task images survive editing, project reload, and offline export for every type.
+const taskImage='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///w==';
+for(const type of ['single','multiple','text','oral','order']){
+ p=api.normalize({tasks:[{type,q:'Вопрос',options:['A','B'],ok:'1',fb:'Пояснение',img:taskImage}]});
+ api.setup(p,state());api.stop();
+ assert.equal(p.tasks[0].img,taskImage);
+ assert.match(api.taskHTML(p.tasks[0]),/class="task-image"/);
+ for(const [id,value] of Object.entries({taskType:type,taskQ:'Изменённый вопрос',taskOpt:'A\nB',taskOk:'1',taskFb:'Пояснение'}))get(id).value=value;
+ await get('saveTask').onclick();
+ assert.equal(p.tasks[0].img,taskImage,'Editing keeps the image');
+ assert.equal(JSON.parse(storage.get('dogoniProject')).tasks[0].img,taskImage);
+ for(const key of Object.keys(p.a))p.a[key]=taskImage;
+ assert.equal((await api.embeddedProject(false)).tasks[0].img,taskImage);
+ get('removeTaskImg').onclick();assert.equal(p.tasks[0].img,'');
+ assert.ok(!api.taskHTML(p.tasks[0]).includes('class="task-image"'));
+}
+assert.equal(api.normalize({tasks:[{img:'javascript:alert(1)'}]}).tasks[0].img,'');
+assert.equal(api.normalize({tasks:[{q:'Старый проект'}]}).tasks[0].img,'');
+for(const preview of [false,true]){
+ const feedback=element(),check=element();let completed=null;
+ const card={querySelector:s=>({'.feedback':feedback,'.check':check}[s]),querySelectorAll:()=>[]};
+ api.wireAnswer(card,{type:'oral',fb:'Объяснение: $1+1=2$'},ok=>completed=ok,preview);
+ assert.equal(feedback.innerHTML,undefined,'Explanation is hidden until Done');
+ check.onclick();assert.match(feedback.innerHTML,/Объяснение/);assert.ok(!feedback.innerHTML.includes('Верно'));
+ assert.ok(feedback.innerHTML.includes('<math'),'Explanation supports formulas');
+ if(!preview){assert.equal(check.textContent,'Продолжить');check.onclick();assert.equal(completed,true);}
+}
+console.log('PASS: task images for all types, editing, persistence, offline export, removal and oral explanations');
+
+// Exercise the file picker and keep an in-flight upload attached to its task.
+sandbox.FileReader=class{readAsDataURL(file){this.result=file.data;this.onload();}};
+let finishImage;
+sandbox.Image=class{set src(value){finishImage=()=>this.onload();}};
+p=api.def();api.setup(p,state());api.stop();
+const imageInput=get('taskImg');imageInput.files=[{type:'image/gif',data:taskImage}];
+const pendingUpload=imageInput.onchange({target:imageInput});
+await Promise.resolve();
+get('taskQ').value='Правка во время загрузки';await get('saveTask').onclick();
+finishImage();await pendingUpload;
+assert.equal(p.tasks[0].img,taskImage,'Upload survives edits while the image loads');
+assert.match(get('taskImgPreview').innerHTML,/data:image\/gif/);
+await get('saveTask').onclick();assert.equal(p.tasks[0].img,taskImage);
+imageInput.files=[{type:'text/plain',data:'bad'}];await imageInput.onchange({target:imageInput});
+assert.equal(p.tasks[0].img,taskImage,'Unsupported file keeps the existing image');
+console.log('PASS: file upload, concurrent text edits and unsupported file handling');
