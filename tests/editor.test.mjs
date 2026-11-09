@@ -289,3 +289,22 @@ for(const family of ['Georgia','Courier New','system']){
  }
 }
 console.log('PASS: selected font on victory, defeat and timeout screens in preview and gameplay');
+
+// Text entry is shown only in the input; feedback scrolls inside the card.
+p=api.def();p.sound=false;api.setup(p,state());
+for(const type of ['single','multiple','text','oral','order']){
+ const markup=api.taskHTML({...p.tasks[0],type,img:taskImage});
+ assert.ok(!markup.includes('answer-preview'),'No duplicate live answer below the input');
+ assert.match(markup,/<div class="task-content">/);
+ assert.match(markup,/<p class="feedback" role="status"><\/p><\/div><button class="check play"/,'Action stays outside scrolling contents');
+}
+for(const value of ['', 'не сводить глаз']){
+ const feedback=element(),check=element(),input={value},content={scrollTop:0,scrollHeight:900};let completed=null;
+ const card={querySelector:s=>{assert.notEqual(s,'.answer-preview');return {'.feedback':feedback,'.check':check,'.text-answer':input,'.task-content':content}[s];},querySelectorAll:()=>[]};
+ api.wireAnswer(card,{type:'text',ok:'не сводить глаз',fb:'Пояснение'},ok=>completed=ok);
+ assert.equal(input.oninput,undefined,'Typing does not echo the answer elsewhere');
+ check.onclick();assert.equal(content.scrollTop,900,'Feedback becomes visible inside the scroll area');
+ if(value){assert.match(feedback.innerHTML,/Верно/);assert.equal(check.textContent,'Продолжить');check.onclick();assert.equal(completed,true);}
+ else{assert.match(feedback.textContent,/Сначала/);assert.equal(completed,null);}
+}
+console.log('PASS: no duplicate text answers, separate action button and scrolling feedback');

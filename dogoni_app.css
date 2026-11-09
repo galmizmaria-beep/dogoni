@@ -45,3 +45,9 @@ label{color:#566265;font-weight:600}input,select,textarea{border-color:#e0ded5;b
 .game .editorPanel h2,.game .titleCard h2,.game .end h2{font-size:30px}
 
 .task-image-preview img{display:block;max-width:100%;max-height:160px;object-fit:contain;margin:12px auto}.game .task-image{display:block;width:auto;height:auto;max-width:100%;max-height:220px;object-fit:contain;margin:12px auto;flex-shrink:0}
+
+/* Reserve space for the action button; only the task contents scroll. */
+.game .task-layout{display:flex;flex-direction:column;overflow:hidden;gap:12px;min-height:0}
+.game .task-content{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;overflow-wrap:anywhere;padding:4px}
+.game .task-layout>.check{flex:0 0 auto;align-self:center;max-width:calc(100% - 8px);white-space:normal;margin:0 4px 4px}
+.game .task-content .feedback:empty{display:none}
