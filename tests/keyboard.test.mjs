@@ -47,3 +47,21 @@ get('taskCard.check').onclick();get('taskCard.check').onclick();assert.equal(doc
 api.finish(false);get('endCard.play').focus();get('endCard.play').onclick();r=api.getRT();x=r.x;assert.equal(document.activeElement,get('game'));key('ArrowRight');api.step(1/120);assert.ok(r.x>x);assert.ok(r.enemyWait>14);
 for(const fn of windowListeners.get('blur')||[])fn();assert.equal(api.held().right,false);
 console.log('PASS: embedded startup, first-frame keyboard movement/jump, 15-second opponent-only delay, touch focus, text entry, Continue and replay focus');
+
+// Complete an entire game through the real task handlers, including all five types.
+const fullGame=api.getP();fullGame.sound=false;fullGame.timerEnabled=false;fullGame.bonusCount=5;
+fullGame.tasks=['single','multiple','text','oral','order'].map(type=>({type,q:'Вопрос '+type,options:['A','B'],ok:type==='text'?'ответ':type==='multiple'||type==='order'?'1,2':'1',fb:'Пояснение'}));
+fullGame.bonuses=fullGame.tasks.map((_,i)=>({x:10000+i*1000,y:120}));api.start(true);r=api.getRT();
+for(let i=0;i<fullGame.tasks.length;i++){
+ const buttons=['1','2'].map(v=>{const b=element('answer'+v,'BUTTON');b.dataset.a=v;return b;});
+ get('taskCard').querySelectorAll=s=>s==='[data-a]'?buttons:[];
+ api.openTask(i);assert.equal(get('taskModal').classList.contains('show'),true);assert.equal(r.run,false);
+ const type=fullGame.tasks[i].type;
+ if(type==='text')get('taskCard.text-answer').value='ответ';
+ if(['single','multiple','order'].includes(type)){buttons[0].onclick();if(type!=='single')buttons[1].onclick();}
+ get('taskCard.check').onclick();assert.equal(get('taskCard.check').textContent,'Продолжить');
+ get('taskCard.check').onclick();assert.equal(get('taskModal').classList.contains('show'),false,'Continue closes task '+type);
+ assert.equal(Object.keys(r.col).length,i+1);assert.equal(r.run,i<4);
+}
+assert.ok(get('endCard').innerHTML.includes('Победа!'));
+console.log('PASS: complete game through all five task types, closing each modal and reaching victory');

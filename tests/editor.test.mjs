@@ -28,7 +28,7 @@ const sandbox = {document, window:{addEventListener(){}},TextEncoder,TextDecoder
 };
 vm.createContext(sandbox);
 vm.runInContext(mathSource,sandbox);
-const expose = `window.api={finish,applyEndStyle,applyTaskStyle,run,timerActive,hudOriginal:hud,setActorImage,alphaColumns,obstacleParts,moveBody,setShape(shape){obstacleShapes.set(P.a.ob,shape);},def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,sceneryTiles,heroTransform,validateTask,events,titleStyle,screenHTML,taskHTML,embeddedProject,exportGame,start,openTask,setLanguage,tr,fonts,fillLanguage,changed,resetHistory,restoreHistory,stageFit,fitStage,iframeCode,setCam(v){editorCam=v;},
+const expose = `window.api={fillOriginal:fill,finish,applyEndStyle,applyTaskStyle,run,timerActive,hudOriginal:hud,setActorImage,alphaColumns,obstacleParts,moveBody,setShape(shape){obstacleShapes.set(P.a.ob,shape);},def,normalize,syncTasks,heroBox,intersects,bonusY,step,jump,wireAnswer,persist,standalone,sceneryTiles,heroTransform,validateTask,events,titleStyle,screenHTML,taskHTML,embeddedProject,exportGame,start,openTask,setLanguage,tr,fonts,fillLanguage,changed,resetHistory,restoreHistory,stageFit,fitStage,iframeCode,setCam(v){editorCam=v;},
   stubHistoryViews(){fill=()=>{};assets=()=>{};},
   stubStartup(){scene=()=>{};position=()=>{};hud=()=>{};markSelection=()=>{};applyAppearance=()=>{};},
   stubViews(){taskList=()=>{};renderPreview=()=>{};},
@@ -308,3 +308,54 @@ for(const value of ['', 'не сводить глаз']){
  else{assert.match(feedback.textContent,/Сначала/);assert.equal(completed,null);}
 }
 console.log('PASS: no duplicate text answers, separate action button and scrolling feedback');
+
+
+// Audit regressions: accepted answer indices must work in gameplay.
+assert.equal(api.validateTask({type:'single',q:'Вопрос',options:['A','B'],ok:'01'}),'');
+assert.equal(answer('single','01',[1]),true,'Leading zero in a valid answer index');
+assert.equal(answer('multiple','01,02',[2,1]),true);
+assert.equal(answer('order','02,01',[2,1]),true);
+
+// Incomplete tasks must be rejected before the test run, just as for export.
+p=api.def();p.tasks=[{type:'single',q:'Вопрос',options:['A','B'],ok:'9',fb:''}];p.bonusCount=1;
+r=state();api.setup(p,r);api.stop();api.start(true);
+assert.equal(api.getRT(),r,'Invalid question does not start an unwinnable game');
+assert.match(get('taskStatus').textContent,/Задание 1/);
+p.tasks[0].ok='1';api.start(true);assert.notEqual(api.getRT(),r);assert.equal(api.getRT().run,true);
+// Damaged JSON values should not survive normalization as unusable asset URLs/types.
+for(const value of [0,false,null,[],{}]){
+ const project=api.normalize({lives:2.5,a:{bg:value},tasks:[{type:'constructor',q:'Вопрос'}]});
+ assert.equal(typeof project.a.bg,'string');assert.equal(project.tasks[0].type,'single');assert.equal(project.lives,3);
+}
+// Slow older uploads cannot replace a newer choice, undo deletion or modify a new project.
+const imageFinishes=new Map();sandbox.Image=class{set src(value){imageFinishes.set(value,()=>this.onload());}};
+const uploadURL=n=>'data:image/gif;base64,'+n;
+const beginUpload=async n=>{imageInput.files=[{type:'image/gif',data:uploadURL(n)}];const pending=imageInput.onchange({target:imageInput});await Promise.resolve();return {pending};};
+p=api.def();api.setup(p,state());api.stop();
+const oldUpload=await beginUpload('OLD'),newUpload=await beginUpload('NEW');
+imageFinishes.get(uploadURL('NEW'))();await newUpload.pending;
+imageFinishes.get(uploadURL('OLD'))();await oldUpload.pending;
+assert.equal(p.tasks[0].img,uploadURL('NEW'),'Most recent choice wins even if old image loads later');
+const removedUpload=await beginUpload('REMOVED');get('removeTaskImg').onclick();
+imageFinishes.get(uploadURL('REMOVED'))();await removedUpload.pending;assert.equal(p.tasks[0].img,'');
+const staleUpload=await beginUpload('STALE');const previous=p;p=api.def();api.setup(p,state());api.stop();
+imageFinishes.get(uploadURL('STALE'))();await staleUpload.pending;
+assert.equal(previous.tasks[0].img,'');assert.equal(p.tasks[0].img,undefined,'Project replacement cancels pending image writes');
+console.log('PASS: answer indices, validation before testing, damaged import values and image upload race conditions');
+
+// Initialize actual settings bindings and exercise every input handler.
+for(const match of html.matchAll(/<(input|select|textarea)\b([^>]*)>/g)){
+ const attrs=Object.fromEntries([...match[2].matchAll(/([\w-]+)="([^"]*)"/g)].map(m=>[m[1],m[2]]));
+ if(!attrs.id)continue;const control=get(attrs.id);control.type=attrs.type||match[1];
+ control.after=node=>control.nextElementSibling=node;
+}
+document.createElement=tag=>({...element(),tagName:tag.toUpperCase()});
+p=api.def();api.setup(p,state());api.stop();api.fillOriginal();
+const settingIds=['title','lives','timer','enemySpeed','enemyDelay','vol','heroSize','enemySize','par','bonusCount','bonusSize','obstacleSize','timerDisabled','heroFlip','sound','titleEnabled','tsTitle','tsText','tsBtn','tsBg','tsBorder','tsBorderWidth','tsTitleFont','tsTextFont','tsTitleColor','tsTextColor','tsTitleSize','tsTextSize','tsBtnBg','tsBtnColor','tsBtnSize','tsBtnGlow','tsBtnGlowColor',...Object.keys(p.d).filter(id=>ids.has(id)),...['w','l','t'].flatMap(k=>['Title','Text','Bg','Color','Btn','Label','ImgSize'].map(suffix=>k+suffix)),...['Lives','Time','Score'].flatMap(k=>['Scale','Bg','Color'].map(suffix=>'hud'+k+suffix)),...['Shape','Size','Bg','Color','JumpBg','JumpColor'].map(suffix=>'control'+suffix)];
+for(const id of settingIds){const control=get(id),handler=control.type==='number'?control.onchange:control.oninput;assert.equal(typeof handler,'function','Bound setting '+id);handler();}
+assert.equal(api.getP().tasks.length,3);assert.equal(api.getP().obs.length,3);
+get('bonusCount').value='5';get('bonusCount').onchange();assert.equal(p.tasks.length,5);assert.equal(p.obs.length,5);
+get('timerDisabled').checked=true;get('timerDisabled').oninput();assert.equal(p.timerEnabled,false);assert.equal(get('timer').disabled,true);
+get('qFont').value='Georgia';get('qFont').oninput();assert.equal(p.d.qFont,'Georgia');assert.equal(p.d.aFont,'Georgia');
+assert.equal(api.normalize(JSON.parse(JSON.stringify(p))).tasks.length,5);
+console.log('PASS: '+settingIds.length+' actual settings bindings, bonus/task synchronization, timer toggle and shared font');
